@@ -81,8 +81,9 @@ Copy the URL to Clipboard, before you press the "add Record" button, as it would
 
 ## Co-written by AI
 
-The initial nodejs code was co-written with [CursorAI](https://cursor.com/). 
+The initial nodejs code was co-written with [CursorAI](https://cursor.com/), which also added detailed documentation in the code.
 
 The excel template was created by [Arun-KS](https://github.com/arun-ks/) who also had created the VBA Macros, as Cursor struggled & complicated it.
 
 The MJS code was maintained & enhanced by Arun-KS, to handle some bugs in Cursor's code.
+
