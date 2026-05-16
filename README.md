@@ -10,7 +10,6 @@ This repository builds a **single static HTML file** that visualizes job-applica
 | **`JobHunt/`** (Node project folder) | Build script and HTML template. |
 | **`JobHunt/build.mjs`** | Reads the workbook, normalizes rows to JSON, writes **`dist/jobhunt-progress.html`**. |
 | **`JobHunt/report-template.html`** | UI, filters, and Plotly charts. Placeholder `__APP_B64__` is replaced during the build. |
-| **`excel-vba/`** | Optional VBA: **`Mod_AddApplication.bas`**, **`clsJobHuntFormButtons.cls`**, form paste text. Import into `JobHunt.xlsm`; see **Excel VBA (quick-add)** below. |
 | **`dist/jobhunt-progress.html`** | **Generated output** — run the build to create or refresh it. |
 
 ## Prerequisites
@@ -40,10 +39,10 @@ npm run build
 Custom workbook path:
 
 ```bash
-node build.mjs "D:\path\JobHunt.xlsm"
+node build.mjs "C:\path\JobHunt.xlsm"
 ```
 
-## Expected workbook columns
+## Excel Workbook columns
 
 Headers are matched **by name** (not by column letter), so you can reorder columns as long as names stay consistent. Important names include:
 
@@ -53,35 +52,23 @@ Headers are matched **by name** (not by column letter), so you can reorder colum
 
 **Status** should be stored as a **cached value** in Excel (save after formulas calculate) so the export shows the intended text.
 
+
 ## Viewing the report
 
 Open **`dist/jobhunt-progress.html`** in a modern browser. **Internet access** is required for the Plotly CDN unless you vendor the library locally later.
 
 Peers can receive **only the HTML file** after you run a build; no Node is needed on their side.
 
-## Excel VBA (quick-add)
+## Excel VBA 
 
-Optional macros live under **`excel-vba/`**:
+The Workbook **`JobHunt.xlsm`** has easy to use buttons to search jobs (based on Company Name) and to add new row.
+Copy the URL to Clipboard, before you press the "add Record" button, as it would copy the URL from clipboard directly into the new record.
 
-1. In Excel, open **`JobHunt.xlsm`**, press **Alt+F11**.
-2. **File → Import File…** and import **`excel-vba/Mod_AddApplication.bas`** and **`excel-vba/clsJobHuntFormButtons.cls`** (re-import after updates so **`AppendJobHuntApplication`** and the button hook stay in sync).
-3. **Insert → UserForm**. Set its **Name** to **`frmAddApplication`** in the Properties window. Leave the form surface **empty** (no toolbox controls). If you still have old **cmdOK** / **cmdCancel** from the toolbox, delete them so the code can create those controls without a name clash.
-4. Double-click **`frmAddApplication`**, open **`excel-vba/frmAddApplication_PASTE_INTO_USERFORM.txt`**, copy **all** of it, and paste into the UserForm code window (replace everything there).
-5. **Save** the workbook as macro-enabled (`.xlsm`). Close and reopen once so **`Auto_Open`** runs, or in the Immediate window (**Ctrl+G**) run: **`RegisterJobHuntHotkey`**
+**Buttons:** **Add Record** (to add new record in DB), **Search Company** and **Clear Filter**.
 
-**Buttons:** **Add row** and **Cancel** are created in **`BuildControls`**. **`clsJobHuntFormButtons`** uses **`WithEvents`** on those `CommandButton` references so clicks are handled even though the buttons are not drawn on the designer (run-time `Controls.Add` does not wire `cmdOK_Click` on the UserForm module).
-
-**Hotkey:** **Ctrl+Shift+N** opens the dialog. Change **`HOTKEY_SEQUENCE`** in `Mod_AddApplication.bas` if that shortcut clashes with another add-in.
-
-**Role type** is a **plain single-select list** (not checkboxes). Excel often returns **error 380** if `ListStyle = 2` (checkbox) is applied to a **run-time** `ListBox`; plain list + `ListIndex` avoids that. Click one row before **Add row**.
-
-Labels, text boxes, and the role list are created in code, so they are **not** real members of the UserForm (e.g. `Me.txtJobPosted` will fail). The pasted code uses **`Tb("…")`** and **`LstRoleCtl()`** helpers that read **`Me.Controls("name")`** instead.
-
-**New rows:** **`AppendJobHuntApplication`** copies **number / font / fill / border** formatting from **`A2:O2`** onto the new row and matches **row height** to row **2**.
-
-If column **C** has no values yet, add one manual row first so the list is not empty.
+**Hotkey:** **Ctrl+Shift+S** opens dialog for "Search Company", it defaults to value in 1st column of current row. **Ctrl+Shift+I** would add the new row.
 
 ## Maintenance notes
 
-- The HTML report uses a **fixed light** theme (no dark mode toggle).
+- The HTML report uses a **fixed light** theme 
 - Chart logic and filter behaviour live in **`report-template.html`** (inline script). Build logic and column mapping live in **`build.mjs`** — update both if you add columns that should appear in charts or filters.
