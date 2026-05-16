@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Application progress</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+    <style>
+      :root {
+        --bg: #f4f6fa;
+        --panel: #ffffff;
+        --text: #1a2332;
+        --muted: #5c6b7e;
+        --accent: #2a6ebb;
+        --border: #d8e0ea;
+        --btn-bg: #e8eef6;
+        --empty-fg: #5c6b7e;
+        --plot-paper: #ffffff;
+        --plot-grid: #e2e8f0;
+        --plot-font: #1a2332;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.45;
+      }
+      header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+      }
+      .header-text h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 600;
+      }
+      .wrap {
+        width: 100%;
+        max-width: min(1920px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 1rem clamp(0.75rem, 2.5vw, 2rem) 2.5rem;
+      }
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: flex-end;
+        margin: 1rem 0 1.25rem;
+        padding: 1rem;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      .filters label {
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+      .filters select {
+        min-width: 220px;
+        max-width: 320px;
+        height: 140px;
+        padding: 0.35rem;
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+      .filters .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .filters button {
+        padding: 0.45rem 0.85rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--btn-bg);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+      .filters button:hover {
+        border-color: var(--accent);
+      }
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+      }
+      .kpi {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+      }
+      .kpi span {
+        display: block;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+      }
+      .kpi strong {
+        font-size: 1.35rem;
+        font-weight: 600;
+      }
+      section {
+        margin-bottom: 2rem;
+      }
+      section h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem;
+        color: var(--muted);
+      }
+      .chart {
+        height: 520px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .chart.chart-daily {
+        height: 600px;
+      }
+      .chart.tall {
+        height: 720px;
+      }
+      .chart.compact {
+        height: 400px;
+      }
+      .chart.calendar {
+        height: 380px;
+      }
+      #scrollTopBtn {
+        position: fixed;
+        bottom: 1.25rem;
+        right: 1.25rem;
+        z-index: 10000;
+        width: 46px;
+        height: 46px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        color: var(--text);
+        font-size: 1.35rem;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+      }
+      #scrollTopBtn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <header id="top">
+      <div class="header-text">
+        <h1 id="reportTitle">Job search progress</h1>
+      </div>
+    </header>
+    <div class="wrap">
+      <div class="filters">
+        <div>
+          <label for="fltRoleType">Role type</label>
+          <select id="fltRoleType" multiple></select>
+        </div>
+        <div>
+          <label for="fltStatus">Status</label>
+          <select id="fltStatus" multiple></select>
+        </div>
+        <div>
+          <label for="fltCompany">Company</label>
+          <select id="fltCompany" multiple></select>
+        </div>
+        <div class="actions">
+          <button type="button" id="btnAll">Select all filters</button>
+          <button type="button" id="btnClear">Clear filters (show all)</button>
+        </div>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <section>
+        <h2>Company breakdown (sunburst)</h2>
+        <div id="chartSunburst" class="chart"></div>
+      </section>
+
+      <section>
+        <h2>Milestones over time (one row per application)</h2>
+        <div id="chartTimeline" class="chart tall"></div>
+      </section>
+
+      <section>
+        <h2>Company → status (Sankey)</h2>
+        <div id="chartSankey" class="chart"></div>
+      </section>
+
+      <section>
+        <h2>Calendar heatmap (daily intensity)</h2>
+        <p style="color: var(--muted); font-size: 0.85rem; margin: 0 0 0.5rem">
+          Top row: applications submitted per day. Bottom row: all milestone dates (multiple per job possible).
+        </p>
+        <div id="chartCalendar" class="chart calendar"></div>
+      </section>
+
+      <section>
+        <h2>Pipeline stages (Sankey)</h2>
+        <p style="color: var(--muted); font-size: 0.85rem; margin: 0 0 0.5rem">
+          One path per application from first milestone through dates present; skips missing stages (e.g. interview
+          without shortlist).
+        </p>
+        <div id="chartSankeyStages" class="chart"></div>
+      </section>
+
+      <section>
+        <h2>Applications submitted per day (stacked by current status)</h2>
+        <div id="chartDaily" class="chart chart-daily"></div>
+      </section>
+
+      <section>
+        <h2>Pipeline funnel (counts with each milestone date)</h2>
+        <div id="chartFunnel" class="chart compact"></div>
+      </section>
+    </div>
+
+    <button type="button" id="scrollTopBtn" aria-label="Back to top" title="Back to top">↑</button>
+
+    <meta id="app-meta" data-b64="eyJnZW5lcmF0ZWRBdCI6IjIwMjYtMDUtMTZUMjA6MDg6MTUuMTE1WiIsInNvdXJjZSI6IkpvYkh1bnQueGxzbSIsInNoZWV0IjoiSm9iSHVudCIsImFwcGxpY2F0aW9ucyI6W3siaWQiOiIwLUFjY2VudHVyZSIsImNvbXBhbnkiOiJBY2NlbnR1cmUiLCJwb3NpdGlvbiI6IlRlY2hub2xvZ3kgU3RyYXRlZ3kgJiBSb2FkbWFwIEFyY2hpdGVjdCBTZW5pb3IgTWFuYWdlciIsInJvbGVUeXBlIjoiQXJjaGl0ZWN0Iiwic3RhdHVzIjoiQXBwbGllZCIsInBvcnRhbCI6ImFjY2VudHVyZSIsImZsYWciOiIiLCJ1cmwiOiJodHRwczovL2FjY2VudHVyZS53ZDEwMy5teXdvcmtkYXlqb2JzLmNvbS9lbi1VUy9BY2NlbnR1cmVDYXJlZXJzL2pvYi9UZWNobm9sb2d5LVN0cmF0ZWd5LS0tUm9hZG1hcC1BcmNoaXRlY3QtU2VuaW9yLU1hbmFnZXJfMTI5MDY5OTYtMSIsImxvZyI6IiIsImRhdGVzIjp7ImpvYlBvc3RlZCI6IjIwMjYtMDQtMDkiLCJhcHBsaWVkIjoiMjAyNi0wNS0wNSIsInNob3J0TGlzdGVkIjpudWxsLCJpbnRlcnZpZXciOm51bGwsIm9mZmVyIjpudWxsLCJyZWplY3RlZCI6bnVsbCwiZGVjbGluZWQiOm51bGx9LCJzdGVwcyI6W3sia2V5IjoiYXBwbGllZCIsImxhYmVsIjoiQXBwbGllZCIsImRhdGUiOiIyMDI2LTA1LTA1In1dLCJsYWJlbCI6IkFjY2VudHVyZSDigJQgVGVjaG5vbG9neSBTdHJhdGVneSAmIFJvYWRtYXAgQXJjaGl0ZWN0IFNlbmlvciBNYW5hZ2VyIn0seyJpZCI6IjEtQ2FwZ2VtaW5pIiwiY29tcGFueSI6IkNhcGdlbWluaSIsInBvc2l0aW9uIjoiR2VuQUkgQXJjaGl0ZWN0ICgzODg5NDkpIiwicm9sZVR5cGUiOiJBSSIsInN0YXR1cyI6IkFwcGxpZWQiLCJwb3J0YWwiOiJjYXBnZW1pbmkiLCJmbGFnIjoiIiwidXJsIjoiaHR0cHM6Ly93d3cuY2FwZ2VtaW5pLmNvbS9qb2JzLzM4ODk0OS1lbl9HQl9TQVBCVFAvR2VuQUktQXJjaGl0ZWN0IiwibG9nIjoiIiwiZGF0ZXMiOnsiam9iUG9zdGVkIjoiMjAyNi0wNC0yMSIsImFwcGxpZWQiOiIyMDI2LTA1LTA1Iiwic2hvcnRMaXN0ZWQiOm51bGwsImludGVydmlldyI6bnVsbCwib2ZmZXIiOm51bGwsInJlamVjdGVkIjpudWxsLCJkZWNsaW5lZCI6bnVsbH0sInN0ZXBzIjpbeyJrZXkiOiJhcHBsaWVkIiwibGFiZWwiOiJBcHBsaWVkIiwiZGF0ZSI6IjIwMjYtMDUtMDUifV0sImxhYmVsIjoiQ2FwZ2VtaW5pIOKAlCBHZW5BSSBBcmNoaXRlY3QgKDM4ODk0OSkifSx7ImlkIjoiMi1ESEwiLCJjb21wYW55IjoiREhMIiwicG9zaXRpb24iOiJQcm9qZWN0IE1hbmFnZXIiLCJyb2xlVHlwZSI6IlByb2plY3QgTWFuYWdlciIsInN0YXR1cyI6IkFwcGxpZWQiLCJwb3J0YWwiOiJkcGRobGdyb3VwIiwiZmxhZyI6IiIsInVybCI6Imh0dHBzOi8vZHBkaGxncm91cC5hdmF0dXJlLm5ldC9lbl9VUy9qb2JzL0pvYkRldGFpbC9Qcm9qZWN0LU1hbmFnZXItUkMwMzYxODUtQmVybmFyZC8zMzk4NDUiLCJsb2ciOiIiLCJkYXRlcyI6eyJqb2JQb3N0ZWQiOiIyMDI2LTAzLTAyIiwiYXBwbGllZCI6IjIwMjYtMDUtMDUiLCJzaG9ydExpc3RlZCI6bnVsbCwiaW50ZXJ2aWV3IjpudWxsLCJvZmZlciI6bnVsbCwicmVqZWN0ZWQiOm51bGwsImRlY2xpbmVkIjpudWxsfSwic3RlcHMiOlt7ImtleSI6ImFwcGxpZWQiLCJsYWJlbCI6IkFwcGxpZWQiLCJkYXRlIjoiMjAyNi0wNS0wNSJ9XSwibGFiZWwiOiJESEwg4oCUIFByb2plY3QgTWFuYWdlciJ9LHsiaWQiOiIzLURITCIsImNvbXBhbnkiOiJESEwiLCJwb3NpdGlvbiI6IlByaW5jaXBhbCBJVCBTb2x1dGlvbnMgQ29uc3VsdGFudCAoQWdlbnRpYyBBSSBEZXZlbG9wbWVudCDigJMgUGxhdGZvcm0gRW5nIFRyYW5zZm9ybWF0aW9uKSIsInJvbGVUeXBlIjoiQUkiLCJzdGF0dXMiOiJBcHBsaWVkIiwicG9ydGFsIjoiZHBkaGxncm91cCIsImZsYWciOiIiLCJ1cmwiOiJodHRwczovL2RwZGhsZ3JvdXAuYXZhdHVyZS5uZXQvZW5fVVMvam9icy9Kb2JEZXRhaWwvUHJpbmNpcGFsLUlULVNvbHV0aW9ucy1Db25zdWx0YW50LUFnZW50aWMtQUktUkMwMzYxNTYtTHVrYXMtSG9seS8zNDExMjQiLCJsb2ciOiIiLCJkYXRlcyI6eyJqb2JQb3N0ZWQiOiIyMDI2LTAzLTA2IiwiYXBwbGllZCI6IjIwMjYtMDUtMDUiLCJzaG9ydExpc3RlZCI6bnVsbCwiaW50ZXJ2aWV3IjpudWxsLCJvZmZlciI6bnVsbCwicmVqZWN0ZWQiOm51bGwsImRlY2xpbmVkIjpudWxsfSwic3RlcHMiOlt7ImtleSI6ImFwcGxpZWQiLCJsYWJlbCI6IkFwcGxpZWQiLCJkYXRlIjoiMjAyNi0wNS0wNSJ9XSwibGFiZWwiOiJESEwg4oCUIFByaW5jaXBhbCBJVCBTb2x1dGlvbnMgQ29uc3VsdGFudCAoQWdlbnRpYyBBSSBEZXZlbG9wbWVudCDigJMgUGxhdGZvcm0gRW5nIFRyYW5zZm9ybWF0aW9uKSJ9LHsiaWQiOiI0LURITCIsImNvbXBhbnkiOiJESEwiLCJwb3NpdGlvbiI6IkFzc29jaWF0ZSBQcm9qZWN0IE1hbmFnZXIiLCJyb2xlVHlwZSI6IlByb2plY3QgTWFuYWdlciIsInN0YXR1cyI6IkFwcGxpZWQiLCJwb3J0YWwiOiJkcGRobGdyb3VwIiwiZmxhZyI6IiIsInVybCI6Imh0dHBzOi8vZHBkaGxncm91cC5hdmF0dXJlLm5ldC9lbl9VUy9qb2JzL0pvYkRldGFpbC9Bc3NvY2lhdGUtUHJvamVjdC1NYW5hZ2VyLVJDMDM1NDU1LUplbmctU2VhbmcvMzQzMTA1IiwibG9nIjoiIiwiZGF0ZXMiOnsiam9iUG9zdGVkIjoiMjAyNi0wMy0xOCIsImFwcGxpZWQiOiIyMDI2LTA1LTA1Iiwic2hvcnRMaXN0ZWQiOm51bGwsImludGVydmlldyI6bnVsbCwib2ZmZXIiOm51bGwsInJlamVjdGVkIjpudWxsLCJkZWNsaW5lZCI6bnVsbH0sInN0ZXBzIjpbeyJrZXkiOiJhcHBsaWVkIiwibGFiZWwiOiJBcHBsaWVkIiwiZGF0ZSI6IjIwMjYtMDUtMDUifV0sImxhYmVsIjoiREhMIOKAlCBBc3NvY2lhdGUgUHJvamVjdCBNYW5hZ2VyIn0seyJpZCI6IjUtRVkiLCJjb21wYW55IjoiRVkiLCJwb3NpdGlvbiI6IlRlY2hub2xvZ3kgQ29uc3VsdGluZyAtIFByb2plY3QgTWFuYWdlciAoRGlnaXRhbCBUcmFuc2Zvcm1hdGlvbikiLCJyb2xlVHlwZSI6IlByb2plY3QgTWFuYWdlciIsInN0YXR1cyI6IkFwcGxpZWQiLCJwb3J0YWwiOiJjYXJlZXJzIiwiZmxhZyI6IiIsInVybCI6Imh0dHBzOi8vY2FyZWVycy5leS5jb20vZXkvam9iL0t1YWxhLUx1bXB1ci1UZWNobm9sb2d5LUNvbnN1bHRpbmctUHJvamVjdC1NYW5hZ2VyLSUyOERpZ2l0YWwtVHJhbnNmb3JtYXRpb24lMjktRmVkZS01MDQ5MC8xMjE2OTAwMzAxLyIsImxvZyI6IiIsImRhdGVzIjp7ImpvYlBvc3RlZCI6IjIwMjYtMDQtMjEiLCJhcHBsaWVkIjoiMjAyNi0wNS0wNiIsInNob3J0TGlzdGVkIjpudWxsLCJpbnRlcnZpZXciOm51bGwsIm9mZmVyIjpudWxsLCJyZWplY3RlZCI6bnVsbCwiZGVjbGluZWQiOm51bGx9LCJzdGVwcyI6W3sia2V5IjoiYXBwbGllZCIsImxhYmVsIjoiQXBwbGllZCIsImRhdGUiOiIyMDI2LTA1LTA2In1dLCJsYWJlbCI6IkVZIOKAlCBUZWNobm9sb2d5IENvbnN1bHRpbmcgLSBQcm9qZWN0IE1hbmFnZXIgKERpZ2l0YWwgVHJhbnNmb3JtYXRpb24pIn0seyJpZCI6IjYtRVkiLCJjb21wYW55IjoiRVkiLCJwb3NpdGlvbiI6IlRlY2hub2xvZ3kgQ29uc3VsdGluZyAtIFByb2plY3QgTWFuYWdlciwgU29mdHdhcmUgRW5naW5lZXJpbmciLCJyb2xlVHlwZSI6IlByb2plY3QgTWFuYWdlciIsInN0YXR1cyI6IkFwcGxpZWQiLCJwb3J0YWwiOiJjYXJlZXJzIiwiZmxhZyI6IiIsInVybCI6Imh0dHBzOi8vY2FyZWVycy5leS5jb20vZXkvam9iL0t1YWxhLUx1bXB1ci1UZWNobm9sb2d5LUNvbnN1bHRpbmctUHJvamVjdC1NYW5hZ2VyJTJDLVNvZnR3YXJlLUVuZ2luZWVyaW5nLUZlZGUtNTA0OTAvMTIyNzMyODQwMS8iLCJsb2ciOiIiLCJkYXRlcyI6eyJqb2JQb3N0ZWQiOiIyMDI2LTA0LTIwIiwiYXBwbGllZCI6IjIwMjYtMDUtMDYiLCJzaG9ydExpc3RlZCI6bnVsbCwiaW50ZXJ2aWV3IjpudWxsLCJvZmZlciI6bnVsbCwicmVqZWN0ZWQiOm51bGwsImRlY2xpbmVkIjpudWxsfSwic3RlcHMiOlt7ImtleSI6ImFwcGxpZWQiLCJsYWJlbCI6IkFwcGxpZWQiLCJkYXRlIjoiMjAyNi0wNS0wNiJ9XSwibGFiZWwiOiJFWSDigJQgVGVjaG5vbG9neSBDb25zdWx0aW5nIC0gUHJvamVjdCBNYW5hZ2VyLCBTb2Z0d2FyZSBFbmdpbmVlcmluZyJ9LHsiaWQiOiI3LUFpckFzaWEiLCJjb21wYW55IjoiQWlyQXNpYSIsInBvc2l0aW9uIjoiVGVjaG5pY2FsIFByb2dyYW0gTWFuYWdlciIsInJvbGVUeXBlIjoiUHJvamVjdCBNYW5hZ2VyIiwic3RhdHVzIjoiQXBwbGllZCIsInBvcnRhbCI6ImFpcmFzaWEiLCJmbGFnIjoiIiwidXJsIjoiaHR0cHM6Ly9haXJhc2lhLndkMy5teXdvcmtkYXlqb2JzLmNvbS9lbi1VUy9DYXJlZXJzL2pvYi9UZWNobmljYWwtUHJvZ3JhbS1NYW5hZ2VyX0pSMDAzNDU3NCIsImxvZyI6IiIsImRhdGVzIjp7ImpvYlBvc3RlZCI6IjIwMjYtMDQtMjIiLCJhcHBsaWVkIjoiMjAyNi0wNS0wNyIsInNob3J0TGlzdGVkIjpudWxsLCJpbnRlcnZpZXciOm51bGwsIm9mZmVyIjpudWxsLCJyZWplY3RlZCI6bnVsbCwiZGVjbGluZWQiOm51bGx9LCJzdGVwcyI6W3sia2V5IjoiYXBwbGllZCIsImxhYmVsIjoiQXBwbGllZCIsImRhdGUiOiIyMDI2LTA1LTA3In1dLCJsYWJlbCI6IkFpckFzaWEg4oCUIFRlY2huaWNhbCBQcm9ncmFtIE1hbmFnZXIifSx7ImlkIjoiOC1BaXJBc2lhIiwiY29tcGFueSI6IkFpckFzaWEiLCJwb3NpdGlvbiI6IlByb2dyYW0gTWFuYWdlciIsInJvbGVUeXBlIjoiUHJvamVjdCBNYW5hZ2VyIiwic3RhdHVzIjoiQXBwbGllZCIsInBvcnRhbCI6ImFpcmFzaWEiLCJmbGFnIjoiIiwidXJsIjoiaHR0cHM6Ly9haXJhc2lhLndkMy5teXdvcmtkYXlqb2JzLmNvbS9lbi1VUy9DYXJlZXJzL2pvYi9Qcm9ncmFtLU1hbmFnZXJfSlIwMDM0MDY4IiwibG9nIjoiIiwiZGF0ZXMiOnsiam9iUG9zdGVkIjoiMjAyNi0wNC0wOSIsImFwcGxpZWQiOiIyMDI2LTA1LTA3Iiwic2hvcnRMaXN0ZWQiOm51bGwsImludGVydmlldyI6bnVsbCwib2ZmZXIiOm51bGwsInJlamVjdGVkIjpudWxsLCJkZWNsaW5lZCI6bnVsbH0sInN0ZXBzIjpbeyJrZXkiOiJhcHBsaWVkIiwibGFiZWwiOiJBcHBsaWVkIiwiZGF0ZSI6IjIwMjYtMDUtMDcifV0sImxhYmVsIjoiQWlyQXNpYSDigJQgUHJvZ3JhbSBNYW5hZ2VyIn0seyJpZCI6IjktQWlyQXNpYSIsImNvbXBhbnkiOiJBaXJBc2lhIiwicG9zaXRpb24iOiJNYW5hZ2VyLCBDeWJlcnNlY3VyaXR5IENoYW5nZSAmIFByb2dyYW0gTWFuYWdlbWVudCIsInJvbGVUeXBlIjoiUHJvamVjdCBNYW5hZ2VyIiwic3RhdHVzIjoiUmVqZWN0ZWQiLCJwb3J0YWwiOiJhaXJhc2lhIiwiZmxhZyI6IiIsInVybCI6Imh0dHBzOi8vYWlyYXNpYS53ZDMubXl3b3JrZGF5am9icy5jb20vZW4tVVMvQ2FyZWVycy9qb2IvTWFuYWdlci0tQ3liZXJzZWN1cml0eS1DaGFuZ2UtLS1Qcm9ncmFtLU1hbmFnZW1lbnRfSlIwMDMzNTU2LTEiLCJsb2ciOiIiLCJkYXRlcyI6eyJqb2JQb3N0ZWQiOiIyMDI2LTA0LTA5IiwiYXBwbGllZCI6IjIwMjYtMDUtMDciLCJzaG9ydExpc3RlZCI6bnVsbCwiaW50ZXJ2aWV3IjpudWxsLCJvZmZlciI6bnVsbCwicmVqZWN0ZWQiOiIyMDI2LTA1LTEyIiwiZGVjbGluZWQiOm51bGx9LCJzdGVwcyI6W3sia2V5IjoiYXBwbGllZCIsImxhYmVsIjoiQXBwbGllZCIsImRhdGUiOiIyMDI2LTA1LTA3In0seyJrZXkiOiJyZWplY3RlZCIsImxhYmVsIjoiUmVqZWN0ZWQiLCJkYXRlIjoiMjAyNi0wNS0xMiJ9XSwibGFiZWwiOiJBaXJBc2lhIOKAlCBNYW5hZ2VyLCBDeWJlcnNlY3VyaXR5IENoYW5nZSAmIFByb2dyYW0gTWFuYWdlbWVudCJ9LHsiaWQiOiIxMC1Ob2tpYSIsImNvbXBhbnkiOiJOb2tpYSIsInBvc2l0aW9uIjoiRG9tYWluIEFyY2hpdGVjdCAtIENoYXJnaW5nICYgTWVkaWF0aW9uIiwicm9sZVR5cGUiOiJBcmNoaXRlY3QiLCJzdGF0dXMiOiJSZWplY3RlZCIsInBvcnRhbCI6ImZhLWV2bXItc2Fhc2ZhcHJvZDEiLCJmbGFnIjoiIiwidXJsIjoiaHR0cHM6Ly9mYS1ldm1yLXNhYXNmYXByb2QxLmZhLm9jcy5vcmFjbGVjbG91ZC5jb20vaGNtVUkvQ2FuZGlkYXRlRXhwZXJpZW5jZS9lbi9zaXRlcy9DWF8xL2pvYi8yOTY3OSIsImxvZyI6IiIsImRhdGVzIjp7ImpvYlBvc3RlZCI6IjIwMjYtMDEtMDYiLCJhcHBsaWVkIjoiMjAyNi0wNS0wNyIsInNob3J0TGlzdGVkIjpudWxsLCJpbnRlcnZpZXciOm51bGwsIm9mZmVyIjpudWxsLCJyZWplY3RlZCI6IjIwMjYtMDUtMTIiLCJkZWNsaW5lZCI6bnVsbH0sInN0ZXBzIjpbeyJrZXkiOiJhcHBsaWVkIiwibGFiZWwiOiJBcHBsaWVkIiwiZGF0ZSI6IjIwMjYtMDUtMDcifSx7ImtleSI6InJlamVjdGVkIiwibGFiZWwiOiJSZWplY3RlZCIsImRhdGUiOiIyMDI2LTA1LTEyIn1dLCJsYWJlbCI6Ik5va2lhIOKAlCBEb21haW4gQXJjaGl0ZWN0IC0gQ2hhcmdpbmcgJiBNZWRpYXRpb24ifSx7ImlkIjoiMTEtTm9raWEiLCJjb21wYW55IjoiTm9raWEiLCJwb3NpdGlvbiI6IlNvbHV0aW9ucyBTZXJ2aWNlcyBBcmNoaXRlY3QiLCJyb2xlVHlwZSI6IkFyY2hpdGVjdCIsInN0YXR1cyI6IkFwcGxpZWQiLCJwb3J0YWwiOiJmYS1ldm1yLXNhYXNmYXByb2QxIiwiZmxhZyI6IiIsInVybCI6Imh0dHBzOi8vZmEtZXZtci1zYWFzZmFwcm9kMS5mYS5vY3Mub3JhY2xlY2xvdWQuY29tL2hjbVVJL0NhbmRpZGF0ZUV4cGVyaWVuY2UvZW4vc2l0ZXMvQ1hfMS9qb2IvMzI0NzIiLCJsb2ciOiIiLCJkYXRlcyI6eyJqb2JQb3N0ZWQiOiIyMDI2LTAzLTA0IiwiYXBwbGllZCI6IjIwMjYtMDUtMDciLCJzaG9ydExpc3RlZCI6bnVsbCwiaW50ZXJ2aWV3IjpudWxsLCJvZmZlciI6bnVsbCwicmVqZWN0ZWQiOm51bGwsImRlY2xpbmVkIjpudWxsfSwic3RlcHMiOlt7ImtleSI6ImFwcGxpZWQiLCJsYWJlbCI6IkFwcGxpZWQiLCJkYXRlIjoiMjAyNi0wNS0wNyJ9XSwibGFiZWwiOiJOb2tpYSDigJQgU29sdXRpb25zIFNlcnZpY2VzIEFyY2hpdGVjdCJ9LHsiaWQiOiIxMi1BY2NlbnR1cmUiLCJjb21wYW55IjoiQWNjZW50dXJlIiwicG9zaXRpb24iOiJTdHJhdGVneSAmIENvbnN1bHRpbmcgLSBNYW5hZ2VtZW50IENvbnN1bHRpbmcgTWFuYWdlciAoQ2hhbmdlIE1hbmFnZW1lbnQpIiwicm9sZVR5cGUiOiJQcm9qZWN0IE1hbmFnZXIiLCJzdGF0dXMiOiJBcHBsaWVkIiwicG9ydGFsIjoiYWNjZW50dXJlIiwiZmxhZyI6IiIsInVybCI6Imh0dHBzOi8vYWNjZW50dXJlLndkMTAzLm15d29ya2RheWpvYnMuY29tL2VuLVVTL0FjY2VudHVyZUNhcmVlcnMvam9iL1N0cmF0ZWd5LS0tQ29uc3VsdGluZy0tLU1hbmFnZW1lbnQtQ29uc3VsdGluZy1NYW5hZ2VyLS1DaGFuZ2UtTWFuYWdlbWVudC1fMTMyMDkxNDItMSIsImxvZyI6IiIsImRhdGVzIjp7ImpvYlBvc3RlZCI6IjIwMjYtMDQtMDkiLCJhcHBsaWVkIjoiMjAyNi0wNS0wOCIsInNob3J0TGlzdGVkIjpudWxsLCJpbnRlcnZpZXciOm51bGwsIm9mZmVyIjpudWxsLCJyZWplY3RlZCI6bnVsbCwiZGVjbGluZWQiOm51bGx9LCJzdGVwcyI6W3sia2V5IjoiYXBwbGllZCIsImxhYmVsIjoiQXBwbGllZCIsImRhdGUiOiIyMDI2LTA1LTA4In1dLCJsYWJlbCI6IkFjY2VudHVyZSDigJQgU3RyYXRlZ3kgJiBDb25zdWx0aW5nIC0gTWFuYWdlbWVudCBDb25zdWx0aW5nIE1hbmFnZXIgKENoYW5nZSBNYW5hZ2VtZW50KSJ9LHsiaWQiOiIxMy1VLU1vYmlsZSIsImNvbXBhbnkiOiJVIE1vYmlsZSIsInBvc2l0aW9uIjoiU2VjdGlvbiBIZWFkLCBQcm9kdWN0IERldmVsb3BtZW50Iiwicm9sZVR5cGUiOiJQcm9qZWN0IE1hbmFnZXIiLCJzdGF0dXMiOiJBcHBsaWVkIiwicG9ydGFsIjoibGlua2VkaW4iLCJmbGFnIjoiIiwidXJsIjoiaHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2pvYnMvdmlldy80MzkwMTA3NDkyLyIsImxvZyI6IiIsImRhdGVzIjp7ImpvYlBvc3RlZCI6IjIwMjYtMDUtMTAiLCJhcHBsaWVkIjoiMjAyNi0wNS0xNyIsInNob3J0TGlzdGVkIjpudWxsLCJpbnRlcnZpZXciOm51bGwsIm9mZmVyIjpudWxsLCJyZWplY3RlZCI6bnVsbCwiZGVjbGluZWQiOm51bGx9LCJzdGVwcyI6W3sia2V5IjoiYXBwbGllZCIsImxhYmVsIjoiQXBwbGllZCIsImRhdGUiOiIyMDI2LTA1LTE3In1dLCJsYWJlbCI6IlUgTW9iaWxlIOKAlCBTZWN0aW9uIEhlYWQsIFByb2R1Y3QgRGV2ZWxvcG1lbnQifV19" />
+
+    <script>
+      /**
+       * In-browser report for Job Hunt data embedded at build time (see build.mjs).
+       * DATA is parsed from Base64 in #app-meta to avoid HTML/script injection edge cases.
+       */
+
+      /** Decodes UTF-8 JSON payload from Base64 (build step stores DATA this way). */
+      function b64ToUtf8(b64) {
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return new TextDecoder("utf-8").decode(bytes);
+      }
+
+      const DATA = JSON.parse(b64ToUtf8(document.getElementById("app-meta").dataset.b64));
+
+      /** Three-letter English month abbreviations for manual date formatting. */
+      const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+      /** ISO date string YYYY-MM-DD → DD-Mmm-YY (no time). */
+      function formatDdMmmYy(iso) {
+        if (!iso || typeof iso !== "string") return "";
+        const m = iso.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return iso;
+        const y = Number(m[1]);
+        const mo = Number(m[2]);
+        const d = Number(m[3]);
+        if (!y || mo < 1 || mo > 12 || d < 1 || d > 31) return iso;
+        const dd = String(d).padStart(2, "0");
+        const yy = String(y).slice(-2);
+        return `${dd}-${MONTH_SHORT[mo - 1]}-${yy}`;
+      }
+
+      /** Report build timestamp → DD-Mmm-YY in local calendar (no time shown). */
+      function formatReportGeneratedLocal(iso) {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return formatDdMmmYy(String(iso).slice(0, 10));
+        const y = d.getFullYear();
+        const mo = d.getMonth() + 1;
+        const day = d.getDate();
+        return `${String(day).padStart(2, "0")}-${MONTH_SHORT[mo - 1]}-${String(y).slice(-2)}`;
+      }
+
+      /** Sets the main H1 to include the report generation date (local calendar). */
+      function setReportTitle() {
+        const el = document.getElementById("reportTitle");
+        if (!el) return;
+        const when = formatReportGeneratedLocal(DATA.generatedAt);
+        el.textContent = when ? `Job search progress — ${when}` : "Job search progress";
+      }
+      /** Plotly date axes: ticks and hovers as DD-Mmm-YY, no time. */
+      function xaxisDateStyle(baseX) {
+        return {
+          ...baseX,
+          type: "date",
+          tickformat: "%d-%b-%y",
+          hoverformat: "%d-%b-%y",
+        };
+      }
+
+      /**
+       * Whether a date x-axis should show Plotly's range slider (pan/zoom strip).
+       * Enabled when there are many distinct dates or the calendar span is long.
+       */
+      function shouldShowDateRangeslider(sortedIsoDates) {
+        if (!sortedIsoDates || sortedIsoDates.length < 2) return false;
+        if (sortedIsoDates.length > 18) return true;
+        const t0 = Date.parse(String(sortedIsoDates[0]).slice(0, 10));
+        const t1 = Date.parse(String(sortedIsoDates[sortedIsoDates.length - 1]).slice(0, 10));
+        if (Number.isNaN(t0) || Number.isNaN(t1)) return sortedIsoDates.length > 12;
+        const spanDays = Math.abs(t1 - t0) / 86400000;
+        return spanDays > 42 || sortedIsoDates.length > 12;
+      }
+
+      /** Range slider strip for date x-axes (light theme). */
+      function dateRangesliderAttrs() {
+        return {
+          visible: true,
+          bgcolor: "#eef2f7",
+          bordercolor: "#cbd5e1",
+        };
+      }
+
+      /** Normalized Role Type for filtering; empty workbook cells → "(Unspecified)". */
+      function roleTypeOf(a) {
+        const v = a.roleType;
+        if (v == null || String(v).trim() === "") return "(Unspecified)";
+        return String(v).trim();
+      }
+
+      /** Per-milestone colours for timeline markers (keys match build.mjs step keys). */
+      const STEP_COLORS = {
+        applied: "#6fa8dc",
+        shortListed: "#93c47d",
+        interview: "#ffd966",
+        offer: "#8e7cc3",
+        rejected: "#e06666",
+        declined: "#f6b26b",
+      };
+
+      /** Shared Plotly layout colours/fonts (light theme only). */
+      function plotlyLayoutBase() {
+        return {
+          paper_bgcolor: "#ffffff",
+          plot_bgcolor: "#ffffff",
+          font: {
+            color: "#1a2332",
+            family: "Segoe UI, system-ui, sans-serif",
+          },
+          margin: { t: 36, r: 24, b: 56, l: 72 },
+          xaxis: {
+            gridcolor: "#e2e8f0",
+            zerolinecolor: "#e2e8f0",
+          },
+          yaxis: {
+            gridcolor: "#e2e8f0",
+            zerolinecolor: "#e2e8f0",
+          },
+          legend: { orientation: "h", y: 1.12 },
+        };
+      }
+      /** Sorted unique strings (filter option lists). */
+      function uniq(arr) {
+        return [...new Set(arr)].sort();
+      }
+
+      /**
+       * Applies multi-select filters. Empty selection on a list means "no filter" (show all)
+       * for that dimension — same behaviour for Status, Company, and Role type.
+       */
+      function getFiltered() {
+        const apps = DATA.applications;
+        const stSel = [...document.getElementById("fltStatus").selectedOptions].map((o) => o.value);
+        const coSel = [...document.getElementById("fltCompany").selectedOptions].map((o) => o.value);
+        const rtSel = [...document.getElementById("fltRoleType").selectedOptions].map((o) => o.value);
+        const stUse = stSel.length === 0 ? null : new Set(stSel);
+        const coUse = coSel.length === 0 ? null : new Set(coSel);
+        const rtUse = rtSel.length === 0 ? null : new Set(rtSel);
+        return apps.filter((a) => {
+          if (stUse && !stUse.has(a.status)) return false;
+          if (coUse && !coUse.has(a.company)) return false;
+          if (rtUse && !rtUse.has(roleTypeOf(a))) return false;
+          return true;
+        });
+      }
+
+      /** Populates filter <select>s from full DATA; all options selected = show everything. */
+      function fillFilters() {
+        const apps = DATA.applications;
+        const statuses = uniq(apps.map((a) => a.status));
+        const companies = uniq(apps.map((a) => a.company));
+        const roleTypes = uniq(apps.map((a) => roleTypeOf(a)));
+        const fs = document.getElementById("fltStatus");
+        const fc = document.getElementById("fltCompany");
+        const fr = document.getElementById("fltRoleType");
+        fs.innerHTML = "";
+        fc.innerHTML = "";
+        fr.innerHTML = "";
+        for (const s of statuses) {
+          const o = document.createElement("option");
+          o.value = s;
+          o.textContent = s;
+          o.selected = true;
+          fs.appendChild(o);
+        }
+        for (const c of companies) {
+          const o = document.createElement("option");
+          o.value = c;
+          o.textContent = c;
+          o.selected = true;
+          fc.appendChild(o);
+        }
+        for (const r of roleTypes) {
+          const o = document.createElement("option");
+          o.value = r;
+          o.textContent = r;
+          o.selected = true;
+          fr.appendChild(o);
+        }
+      }
+
+      /** Renders the KPI strip from the currently filtered application list. */
+      function renderKpis(apps) {
+        const el = document.getElementById("kpis");
+        const n = apps.length;
+        const offers = apps.filter((a) => a.dates.offer).length;
+        const rej = apps.filter((a) => a.dates.rejected).length;
+        const decl = apps.filter((a) => a.dates.declined).length;
+        const openish = apps.filter((a) => !a.dates.rejected && !a.dates.declined && !a.dates.offer).length;
+        const rows = [
+          ["Applications", n],
+          ["With offer date", offers],
+          ["Rejected (date)", rej],
+          ["Declined by me", decl],
+          ["No offer / rej / decline", openish],
+        ];
+        el.innerHTML = rows
+          .map(
+            ([k, v]) =>
+              `<div class="kpi"><span>${k}</span><strong>${v}</strong></div>`
+          )
+          .join("");
+      }
+
+      /**
+       * Horizontal timeline: one Y row per application (capped), X = milestone dates from `steps`.
+       * Hover shows DD-Mmm-YY via Plotly template.
+       */
+      function renderTimeline(apps) {
+        const base = plotlyLayoutBase();
+        const sorted = [...apps].sort(
+          (a, b) => (b.dates.applied || "").localeCompare(a.dates.applied || "")
+        );
+        const maxRows = 80;
+        const use = sorted.slice(0, maxRows);
+        const allStepDates = [];
+        for (const a of use) {
+          for (const s of a.steps) allStepDates.push(s.date);
+        }
+        const sortedDates = [...new Set(allStepDates)].sort();
+        const showRangeSlider = shouldShowDateRangeslider(sortedDates);
+        const traces = [];
+        for (let i = 0; i < use.length; i++) {
+          const a = use[i];
+          const xs = a.steps.map((s) => s.date);
+          const ys = a.steps.map(() => i);
+          if (xs.length) {
+            traces.push({
+              type: "scatter",
+              mode: "lines+markers",
+              x: xs,
+              y: ys,
+              line: { color: "#94a3b8", width: 1 },
+              marker: { size: 8, color: a.steps.map((s) => STEP_COLORS[s.key] || "#888") },
+              hovertemplate: "%{x|%d-%b-%y}<br>%{text}<extra></extra>",
+              text: a.steps.map((s) => `${a.company}<br>${s.label}`),
+              showlegend: false,
+            });
+          }
+        }
+        const layout = {
+          ...base,
+          title: { text: "", font: { size: 14 } },
+          xaxis: xaxisDateStyle({
+            ...base.xaxis,
+            title: "Date",
+            ...(showRangeSlider ? { rangeslider: dateRangesliderAttrs() } : {}),
+          }),
+          yaxis: {
+            ...base.yaxis,
+            tickmode: "array",
+            tickvals: use.map((_, i) => i),
+            ticktext: use.map((a) => a.label.slice(0, 70)),
+            title: "",
+            automargin: true,
+          },
+          margin: { t: 24, r: 16, b: showRangeSlider ? 108 : 48, l: 8 },
+        };
+        Plotly.react("chartTimeline", traces, layout, { responsive: true, displayModeBar: true });
+      }
+
+      /** Stacked bar chart: count of applications by `dates.applied`, split by current `status`. */
+      function renderDaily(apps) {
+        const base = plotlyLayoutBase();
+        const byDay = new Map();
+        const statuses = uniq(apps.map((a) => a.status));
+        for (const a of apps) {
+          const d = a.dates.applied;
+          if (!d) continue;
+          if (!byDay.has(d)) byDay.set(d, {});
+          const o = byDay.get(d);
+          o[a.status] = (o[a.status] || 0) + 1;
+        }
+        const days = [...byDay.keys()].sort();
+        const showRangeSlider = shouldShowDateRangeslider(days);
+        const traces = statuses.map((st) => ({
+          type: "bar",
+          name: st,
+          x: days,
+          y: days.map((d) => (byDay.get(d)[st] || 0)),
+          hovertemplate: "%{x|%d-%b-%y}<br>" + st + ": %{y}<extra></extra>",
+        }));
+        const layout = {
+          ...base,
+          barmode: "stack",
+          xaxis: xaxisDateStyle({
+            ...base.xaxis,
+            title: "Application date",
+            ...(showRangeSlider ? { rangeslider: dateRangesliderAttrs() } : {}),
+          }),
+          yaxis: { ...base.yaxis, title: "Count" },
+          margin: {
+            ...base.margin,
+            b: showRangeSlider ? Math.max(base.margin.b, 108) : base.margin.b,
+          },
+        };
+        Plotly.react("chartDaily", traces, layout, { responsive: true, displayModeBar: true });
+      }
+
+      /**
+       * Returns a bucketing function: top `maxN` companies by volume keep their name;
+       * remainder map to "Other companies" (keeps Sankey readable).
+       */
+      function topBucketCompanies(apps, maxN) {
+        const cnt = {};
+        for (const a of apps) cnt[a.company] = (cnt[a.company] || 0) + 1;
+        const top = Object.entries(cnt)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, maxN)
+          .map((x) => x[0]);
+        const set = new Set(top);
+        return (c) => (set.has(c) ? c : "Other companies");
+      }
+
+      /** Sankey: flow from company (bucketed) to status for the filtered cohort. */
+      function renderSankey(apps) {
+        const base = plotlyLayoutBase();
+        const bucket = topBucketCompanies(apps, 14);
+        const pairCounts = new Map();
+        const statuses = uniq(apps.map((a) => a.status));
+        for (const a of apps) {
+          const c = bucket(a.company);
+          const k = c + "\0" + a.status;
+          pairCounts.set(k, (pairCounts.get(k) || 0) + 1);
+        }
+        const companies = uniq([...pairCounts.keys()].map((k) => k.split("\0")[0]));
+        const labels = [...companies, ...statuses];
+        const idx = (s) => labels.indexOf(s);
+        const source = [];
+        const target = [];
+        const value = [];
+        const colors = [];
+        for (const [k, v] of pairCounts) {
+          const [c, s] = k.split("\0");
+          source.push(idx(c));
+          target.push(idx(s));
+          value.push(v);
+          colors.push("rgba(91,155,213,0.35)");
+        }
+        const nodeColors = labels.map((_, i) =>
+          i < companies.length ? "#3d5a80" : "#6c8ebf"
+        );
+        const data = [
+          {
+            type: "sankey",
+            orientation: "h",
+            node: {
+              pad: 12,
+              thickness: 14,
+              line: { color: "#cbd5e1", width: 0.5 },
+              label: labels,
+              color: nodeColors,
+            },
+            link: {
+              source,
+              target,
+              value,
+              color: colors,
+            },
+          },
+        ];
+        const layout = {
+          ...base,
+          margin: { t: 24, r: 24, b: 24, l: 24 },
+          title: { text: "", font: { size: 14 } },
+        };
+        Plotly.react("chartSankey", data, layout, { responsive: true });
+      }
+
+      /** Ordered milestone path for stage-to-stage Sankey (uses date columns only). */
+      /**
+       * Builds the ordered stage list for one application using only date columns
+       * (mirrors funnel logic; used by stage Sankey link aggregation).
+       */
+      function stagePath(a) {
+        const nodes = [];
+        if (!a.dates.applied) return nodes;
+        nodes.push("Applied");
+        if (a.dates.shortListed) nodes.push("Shortlisted");
+        if (a.dates.interview) nodes.push("Interview");
+        if (a.dates.offer) nodes.push("Offer");
+        if (a.dates.rejected) nodes.push("Rejected");
+        else if (a.dates.declined) nodes.push("Declined");
+        else nodes.push("In progress");
+        return nodes;
+      }
+
+      /**
+       * Second Sankey: aggregate forward links along `stagePath` for every filtered row.
+       * Shows how many move Applied → … → terminal or "In progress".
+       */
+      function renderSankeyStages(apps) {
+        const base = plotlyLayoutBase();
+        const linkMap = new Map();
+        const nodeSet = new Set();
+        for (const a of apps) {
+          const path = stagePath(a);
+          for (let i = 0; i < path.length - 1; i++) {
+            const from = path[i];
+            const to = path[i + 1];
+            nodeSet.add(from);
+            nodeSet.add(to);
+            const key = from + "\0" + to;
+            linkMap.set(key, (linkMap.get(key) || 0) + 1);
+          }
+        }
+        const order = ["Applied", "Shortlisted", "Interview", "Offer", "Rejected", "Declined", "In progress"];
+        const labels = order.filter((n) => nodeSet.has(n));
+        if (labels.length < 2 || linkMap.size === 0) {
+          const el = document.getElementById("chartSankeyStages");
+          try {
+            Plotly.purge("chartSankeyStages");
+          } catch (_) {}
+          el.innerHTML =
+            '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);padding:1rem;">Not enough linked stages in the current filter.</div>';
+          return;
+        }
+        const ix = (s) => labels.indexOf(s);
+        const source = [];
+        const target = [];
+        const value = [];
+        const linkColors = [];
+        for (const [k, v] of linkMap) {
+          const [from, to] = k.split("\0");
+          if (ix(from) < 0 || ix(to) < 0) continue;
+          source.push(ix(from));
+          target.push(ix(to));
+          value.push(v);
+          linkColors.push("rgba(147,196,125,0.4)");
+        }
+        const palette = {
+          Applied: "#6fa8dc",
+          Shortlisted: "#93c47d",
+          Interview: "#ffd966",
+          Offer: "#8e7cc3",
+          Rejected: "#e06666",
+          Declined: "#f6b26b",
+          "In progress": "#76a5af",
+        };
+        const nodeColors = labels.map((l) => palette[l] || "#888");
+        const data = [
+          {
+            type: "sankey",
+            orientation: "h",
+            node: {
+              pad: 14,
+              thickness: 16,
+              line: { color: "#cbd5e1", width: 0.5 },
+              label: labels,
+              color: nodeColors,
+            },
+            link: {
+              source,
+              target,
+              value,
+              color: linkColors,
+            },
+          },
+        ];
+        const layout = {
+          ...base,
+          margin: { t: 24, r: 24, b: 24, l: 24 },
+        };
+        Plotly.react("chartSankeyStages", data, layout, { responsive: true });
+      }
+
+      /** Simple bar counts: how many rows have each milestone date column set. */
+      function renderFunnel(apps) {
+        const base = plotlyLayoutBase();
+        const stages = [
+          ["Applied", (a) => a.dates.applied],
+          ["Short listed", (a) => a.dates.shortListed],
+          ["Interview / test", (a) => a.dates.interview],
+          ["Offer", (a) => a.dates.offer],
+        ];
+        const x = stages.map(([name]) => name);
+        const y = stages.map(([, fn]) => apps.filter(fn).length);
+        const trace = {
+          type: "bar",
+          x,
+          y,
+          marker: { color: "#5b9bd5" },
+          hovertemplate: "%{x}: %{y}<extra></extra>",
+        };
+        const layout = {
+          ...base,
+          xaxis: { ...base.xaxis, title: "" },
+          yaxis: { ...base.yaxis, title: "Applications with this date set" },
+        };
+        Plotly.react("chartFunnel", [trace], layout, { responsive: true });
+      }
+
+      /** Deterministic short hash for Plotly sunburst node ids (avoids special characters). */
+      function hashStr(s) {
+        let h = 0;
+        const str = String(s);
+        for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        return (h >>> 0).toString(36);
+      }
+
+      /** Sunburst: Company → Status hierarchy for filtered applications. */
+      function renderSunburst(apps) {
+        const base = plotlyLayoutBase();
+        const ids = [];
+        const labels = [];
+        const parents = [];
+        const values = [];
+        ids.push("all");
+        labels.push("All");
+        parents.push("");
+        values.push(apps.length);
+        const byCo = {};
+        for (const a of apps) {
+          byCo[a.company] = byCo[a.company] || { n: 0, bySt: {} };
+          byCo[a.company].n++;
+          byCo[a.company].bySt[a.status] = (byCo[a.company].bySt[a.status] || 0) + 1;
+        }
+        for (const [co, { n, bySt }] of Object.entries(byCo)) {
+          const id = "c" + hashStr(co);
+          ids.push(id);
+          labels.push(co);
+          parents.push("all");
+          values.push(n);
+          for (const [st, c] of Object.entries(bySt)) {
+            ids.push(id + "_" + hashStr(co + "\0" + st));
+            labels.push(st);
+            parents.push(id);
+            values.push(c);
+          }
+        }
+        const lineColor = "#ffffff";
+        const trace = {
+          type: "sunburst",
+          ids,
+          labels,
+          parents,
+          values,
+          branchvalues: "total",
+          insidetextorientation: "radial",
+          marker: { line: { width: 1, color: lineColor } },
+        };
+        const layout = {
+          ...base,
+          margin: { t: 12, r: 12, b: 12, l: 12 },
+          sunburstcolorway: ["#5b9bd5", "#6fa8dc", "#93c47d", "#ffd966", "#e06666", "#8e7cc3"],
+        };
+        Plotly.react("chartSunburst", [trace], layout, { responsive: true });
+      }
+
+      /**
+       * Two-row heatmap over calendar days: applications submitted vs milestone-event counts.
+       * X axis uses Plotly date formatting (DD-Mmm-YY).
+       */
+      function renderCalendarHeatmap(apps) {
+        const base = plotlyLayoutBase();
+        const day = new Map();
+        for (const a of apps) {
+          const d = a.dates.applied;
+          if (d) {
+            if (!day.has(d)) day.set(d, { app: 0, milestones: 0 });
+            day.get(d).app++;
+          }
+          for (const s of a.steps) {
+            if (!day.has(s.date)) day.set(s.date, { app: 0, milestones: 0 });
+            day.get(s.date).milestones++;
+          }
+        }
+        const keys = [...day.keys()].sort();
+        if (!keys.length) {
+          Plotly.react("chartCalendar", [], { ...base }, { responsive: true });
+          return;
+        }
+        const showRangeSlider = shouldShowDateRangeslider(keys);
+        const z = [
+          keys.map((k) => day.get(k).app),
+          keys.map((k) => day.get(k).milestones),
+        ];
+        const trace = {
+          type: "heatmap",
+          x: keys,
+          y: ["Applications (submitted)", "Milestone events"],
+          z,
+          colorscale: [
+            [0, "#f8fafc"],
+            [0.35, "#bfdbfe"],
+            [0.65, "#3b82f6"],
+            [1, "#1e3a5f"],
+          ],
+          showscale: true,
+          colorbar: { title: "Count", titleside: "right" },
+          hovertemplate: "%{x|%d-%b-%y}<br>%{y}: %{z}<extra></extra>",
+        };
+        const layout = {
+          ...base,
+          xaxis: xaxisDateStyle({
+            ...base.xaxis,
+            title: "Date",
+            tickangle: -35,
+            ...(showRangeSlider ? { rangeslider: dateRangesliderAttrs() } : {}),
+          }),
+          yaxis: { ...base.yaxis, title: "", autorange: "reversed" },
+          margin: {
+            t: 28,
+            r: 80,
+            b: showRangeSlider ? 120 : 72,
+            l: 160,
+          },
+        };
+        Plotly.react("chartCalendar", [trace], layout, { responsive: true, displayModeBar: true });
+      }
+
+      /** Plotly graph div ids, in refresh order (used for purge / empty state). */
+      const CHART_IDS = [
+        "chartSunburst",
+        "chartTimeline",
+        "chartSankey",
+        "chartCalendar",
+        "chartSankeyStages",
+        "chartDaily",
+        "chartFunnel",
+      ];
+
+      /** Message shown inside each chart container when filters exclude every row. */
+      function emptyMessageHtml() {
+        const fg = getComputedStyle(document.documentElement).getPropertyValue("--empty-fg").trim() || "#9aa8bc";
+        return `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:${fg};padding:1rem;text-align:center;">No applications match the current filters.</div>`;
+      }
+
+      /**
+       * Recomputes all charts from `getFiltered()`. Clears containers, then Plotly.react.
+       * Title/date is set once at init (not here) so it does not flicker on filter changes.
+       */
+      function refresh() {
+        const apps = getFiltered();
+        if (!apps.length) {
+          document.getElementById("kpis").innerHTML = "";
+          for (const id of CHART_IDS) {
+            const el = document.getElementById(id);
+            try {
+              Plotly.purge(id);
+            } catch (_) {}
+            el.innerHTML = emptyMessageHtml();
+          }
+          return;
+        }
+        for (const id of CHART_IDS) {
+          const el = document.getElementById(id);
+          try {
+            Plotly.purge(id);
+          } catch (_) {}
+          el.innerHTML = "";
+        }
+        renderKpis(apps);
+        renderSunburst(apps);
+        renderTimeline(apps);
+        renderSankey(apps);
+        renderCalendarHeatmap(apps);
+        renderSankeyStages(apps);
+        renderDaily(apps);
+        renderFunnel(apps);
+      }
+
+      document.getElementById("btnAll").addEventListener("click", () => {
+        for (const sel of [
+          document.getElementById("fltStatus"),
+          document.getElementById("fltCompany"),
+          document.getElementById("fltRoleType"),
+        ]) {
+          [...sel.options].forEach((o) => (o.selected = true));
+        }
+        refresh();
+      });
+      document.getElementById("btnClear").addEventListener("click", () => {
+        for (const sel of [
+          document.getElementById("fltStatus"),
+          document.getElementById("fltCompany"),
+          document.getElementById("fltRoleType"),
+        ]) {
+          [...sel.options].forEach((o) => (o.selected = false));
+        }
+        refresh();
+      });
+      document.getElementById("fltStatus").addEventListener("change", refresh);
+      document.getElementById("fltCompany").addEventListener("change", refresh);
+      document.getElementById("fltRoleType").addEventListener("change", refresh);
+
+      const scrollTopBtn = document.getElementById("scrollTopBtn");
+      /** Shows the floating "up" control after the user scrolls down the page. */
+      function updateScrollTopBtn() {
+        scrollTopBtn.style.display = window.scrollY > 280 ? "flex" : "none";
+      }
+      window.addEventListener("scroll", updateScrollTopBtn, { passive: true });
+      scrollTopBtn.addEventListener("click", () => {
+        document.getElementById("top").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      updateScrollTopBtn();
+
+      setReportTitle();
+      fillFilters();
+      refresh();
+    </script>
+  </body>
+</html>
