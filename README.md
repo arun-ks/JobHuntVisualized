@@ -1,4 +1,4 @@
-# Job hunt Visualize
+# Job hunt Visualized
 
 This repository builds a **single static HTML file** that visualizes job-application progress from an Excel macro-enabled workbook (**`JobHunt.xlsm`**).
 
