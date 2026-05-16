@@ -1,0 +1,14 @@
+{
+  "name": "jobhunt-html-report",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Build HTML5 progress report from JobHunt.xlsm",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:open": "node build.mjs; start ..\\dist\\jobhunt-progress.html"
+  },
+  "dependencies": {
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  }
+}
