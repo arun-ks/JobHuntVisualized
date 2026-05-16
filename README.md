@@ -1,6 +1,12 @@
-# Job hunt report
+# Job hunt Visualize
 
-This repository builds a **single static HTML file** that visualizes job-application progress from an Excel macro-enabled workbook (**`JobHunt.xlsm`**). There is no server: the HTML loads Plotly from a CDN and reads data that was **embedded at build time**.
+This repository builds a **single static HTML file** that visualizes job-application progress from an Excel macro-enabled workbook (**`JobHunt.xlsm`**).
+
+There is no server: the HTML loads Plotly from a CDN and reads data that was **embedded at build time**.
+
+Sample [report can be seen here](https://arun-ks.github.io/JobHuntVisualized/dist/jobhunt-progress.html) which provides multiple views & filtering options.
+
+You just need to maintain the DB in the excel & let this took take care of the reporting.
 
 ## Repository layout
 
@@ -72,3 +78,11 @@ Copy the URL to Clipboard, before you press the "add Record" button, as it would
 
 - The HTML report uses a **fixed light** theme 
 - Chart logic and filter behaviour live in **`report-template.html`** (inline script). Build logic and column mapping live in **`build.mjs`** — update both if you add columns that should appear in charts or filters.
+
+## Co-written by AI
+
+The initial nodejs code was co-written with [CursorAI](https://cursor.com/). 
+
+The excel template was created by [Arun-KS](https://github.com/arun-ks/) who also had created the VBA Macros, as Cursor struggled & complicated it.
+
+The MJS code was maintained & enhanced by Arun-KS, to handle some bugs in Cursor's code.
