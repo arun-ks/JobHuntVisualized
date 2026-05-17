@@ -185,7 +185,7 @@
           <select id="fltStatus" multiple></select>
         </div>
         <div>
-          <label for="fltCompany">Company</label>
+          <label for="fltCompany">Company(<span id="CompanyCount">0</span>)</label>
           <select id="fltCompany" multiple></select>
         </div>
         <div class="actions">
@@ -401,6 +401,8 @@
         fs.innerHTML = "";
         fc.innerHTML = "";
         fr.innerHTML = "";
+        const fcc = document.getElementById("CompanyCount");  /* Add code to show total number of companies */
+        fcc.innerHTML = companies.length;
         for (const s of statuses) {
           const o = document.createElement("option");
           o.value = s;
