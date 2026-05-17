@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Application progress</title>
+    <title>Job Hunt progress</title>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
     <style>
       :root {
@@ -171,7 +171,7 @@
   <body>
     <header id="top">
       <div class="header-text">
-        <h1 id="reportTitle">Job search progress</h1>
+        <h1 id="reportTitle">Job Hunt Progress</h1>
       </div>
     </header>
     <div class="wrap">
@@ -208,7 +208,12 @@
 
       <section>
         <h2>Company → status (Sankey)</h2>
-        <div id="chartSankey" class="chart"></div>
+        <div id="chartSankeyCompany" class="chart"></div>
+      </section>
+
+      <section>
+        <h2>Role → status (Sankey)</h2>
+        <div id="chartSankeyRoleType" class="chart"></div>
       </section>
 
       <section>
@@ -291,7 +296,7 @@
         const el = document.getElementById("reportTitle");
         if (!el) return;
         const when = formatReportGeneratedLocal(DATA.generatedAt);
-        el.textContent = when ? `Job search progress — ${when}` : "Job search progress";
+        el.textContent = when ? `Job Hunt Progress - ${when}` : "Job Hunt Progress";
       }
       /** Plotly date axes: ticks and hovers as DD-Mmm-YY, no time. */
       function xaxisDateStyle(baseX) {
@@ -559,8 +564,24 @@
         return (c) => (set.has(c) ? c : "Other companies");
       }
 
+      /**
+       * Returns a bucketing function: top `maxN` Roles by volume keep their name;
+       * remainder map to "Other companies" (keeps Sankey readable).
+       */
+      function topBucketRoleTypes(apps, maxN) {
+        const cnt = {};
+        for (const a of apps) cnt[a.roleType] = (cnt[a.roleType] || 0) + 1;
+        const top = Object.entries(cnt)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, maxN)
+          .map((x) => x[0]);
+        const set = new Set(top);
+        return (c) => (set.has(c) ? c : "Other Role Types");
+      }
+
+
       /** Sankey: flow from company (bucketed) to status for the filtered cohort. */
-      function renderSankey(apps) {
+      function renderSankeyCompany(apps) {
         const base = plotlyLayoutBase();
         const bucket = topBucketCompanies(apps, 14);
         const pairCounts = new Map();
@@ -611,8 +632,66 @@
           margin: { t: 24, r: 24, b: 24, l: 24 },
           title: { text: "", font: { size: 14 } },
         };
-        Plotly.react("chartSankey", data, layout, { responsive: true });
+        Plotly.react("chartSankeyCompany", data, layout, { responsive: true });
       }
+
+      /** Sankey: flow from Role (bucketed) to status for the filtered cohort. */
+      function renderSankeyRoleType(apps) {
+        const base = plotlyLayoutBase();
+        const bucket = topBucketRoleTypes(apps, 14);
+        const pairCounts = new Map();
+        const statuses = uniq(apps.map((a) => a.status));
+        for (const a of apps) {
+          const c = bucket(a.roleType);
+          const k = c + "\0" + a.status;
+          pairCounts.set(k, (pairCounts.get(k) || 0) + 1);
+        }
+        const roleTypes = uniq([...pairCounts.keys()].map((k) => k.split("\0")[0]));
+        const labels = [...roleTypes, ...statuses];
+        const idx = (s) => labels.indexOf(s);
+        const source = [];
+        const target = [];
+        const value = [];
+        const colors = [];
+        for (const [k, v] of pairCounts) {
+          const [c, s] = k.split("\0");
+          source.push(idx(c));
+          target.push(idx(s));
+          value.push(v);
+          colors.push("rgba(91,155,213,0.35)");
+        }
+        const nodeColors = labels.map((_, i) =>
+          i < roleTypes.length ? "#3d5a80" : "#6c8ebf"
+        );
+        const data = [
+          {
+            type: "sankey",
+            orientation: "h",
+            node: {
+              pad: 12,
+              thickness: 14,
+              line: { color: "#cbd5e1", width: 0.5 },
+              label: labels,
+              color: nodeColors,
+            },
+            link: {
+              source,
+              target,
+              value,
+              color: colors,
+            },
+          },
+        ];
+        const layout = {
+          ...base,
+          margin: { t: 24, r: 24, b: 24, l: 24 },
+          title: { text: "", font: { size: 14 } },
+        };
+        Plotly.react("chartSankeyRoleType", data, layout, { responsive: true });
+      }
+
+    
+
 
       /** Ordered milestone path for stage-to-stage Sankey (uses date columns only). */
       /**
@@ -860,7 +939,7 @@
       const CHART_IDS = [
         "chartSunburst",
         "chartTimeline",
-        "chartSankey",
+        "chartSankeyCompany",
         "chartCalendar",
         "chartSankeyStages",
         "chartDaily",
@@ -900,7 +979,8 @@
         renderKpis(apps);
         renderSunburst(apps);
         renderTimeline(apps);
-        renderSankey(apps);
+        renderSankeyCompany(apps);
+        renderSankeyRoleType(apps);
         renderCalendarHeatmap(apps);
         renderSankeyStages(apps);
         renderDaily(apps);
