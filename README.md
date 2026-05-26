@@ -4,7 +4,7 @@ This repository builds a **single static HTML file** that visualizes job-applica
 
 There is no server: the HTML loads Plotly from a CDN and reads data that was **embedded at build time**.
 
-Sample [report can be seen here](https://arun-ks.github.io/JobHuntVisualized/dist/jobhunt-progress.html) which provides multiple views & filtering options.
+Sample [report can be seen here](https://arun-ks.github.io/JobHuntVisualized/dist/index.html) which provides multiple views & filtering options.
 
 You just need to maintain the DB in the excel & let this took take care of the reporting.
 
