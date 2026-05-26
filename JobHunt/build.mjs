@@ -6,7 +6,7 @@
  * 2. Load workbook bytes with SheetJS; pick sheet "JobHunt" or fall back to first sheet.
  * 3. Convert rows to objects keyed by header names; map each row to a normalized "application".
  * 4. Serialize applications + metadata to JSON, Base64-encode (avoids `</script>` issues in HTML).
- * 5. Inject payload into report-template.html → ../dist/jobhunt-progress.html.
+ * 5. Inject payload into report-template.html → ../dist/index.html.
  *
  * Usage: `node build.mjs`  or  `node build.mjs "D:\path\JobHunt.xlsm"`
  */
@@ -20,7 +20,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const SHEET_NAME = "JobHunt";
 const defaultWorkbook = path.join(repoRoot, "JobHunt.xlsm");
 const outDir = path.join(repoRoot, "dist");
-const outHtml = path.join(outDir, "jobhunt-progress.html");
+const outHtml = path.join(outDir, "index.html");
 
 const argPath = process.argv[2];
 const workbookPath = argPath ? path.resolve(argPath) : defaultWorkbook;
