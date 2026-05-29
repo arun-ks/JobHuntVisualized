@@ -173,6 +173,10 @@ function buildRecord(raw, idx) {
 
   const id = `${idx}-${company.slice(0, 24)}`.replace(/\s+/g, "-");
 
+  /** DEBUG Messsage
+   * console.log("Extracted Row#", idx + 1, ",  company=",company, " position=", position,", roleType=",roleType, ", status=",status);
+   */
+
   return {
     id,
     company,
