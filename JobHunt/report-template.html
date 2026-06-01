@@ -108,6 +108,7 @@
         font-size: 0.7rem;
         text-transform: uppercase;
         color: var(--muted);
+        color: white;
         letter-spacing: 0.05em;
       }
       .kpi strong {
@@ -437,19 +438,21 @@
         const n = apps.length;
         const offers = apps.filter((a) => a.dates.offer).length;
         const rej = apps.filter((a) => a.dates.rejected).length;
+        const dormant = apps.filter((a) => a.status === "Dormant").length; 
         const decl = apps.filter((a) => a.dates.declined).length;
         const openish = apps.filter((a) => !a.dates.rejected && !a.dates.declined && !a.dates.offer).length;
         const rows = [
-          ["Applications", n],
-          ["With offer date", offers],
-          ["Rejected (date)", rej],
-          ["Declined by me", decl],
-          ["No offer / rej / decline", openish],
+          ["Applications", n, "DarkMagenta"],
+          ["Rejected", rej, "Red"],
+          ["Declined by me", decl, "Crimson"],
+          ["Dormant (+30 days)", dormant, "OrangeRed"],
+          ["Action with No offer/rej/decline", openish, "ForestGreen"],
+          ["Offers", offers, "RoyalBlue"],
         ];
         el.innerHTML = rows
           .map(
-            ([k, v]) =>
-              `<div class="kpi"><span>${k}</span><strong>${v}</strong></div>`
+            ([k, v, b]) =>
+              `<div class="kpi" style="color: white; background-color: ${b}"><span>${k}</span><strong>${v}</strong></div>`
           )
           .join("");
       }
