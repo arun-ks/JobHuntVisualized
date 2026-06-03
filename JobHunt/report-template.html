@@ -433,7 +433,7 @@
         }
       }
 
-      /** Renders the KPI strip from the currently filtered application list. */
+      /** Renders the KPI strip from the currently filtered application list. (*/
       function renderKpis(apps) {
         const el = document.getElementById("kpis");
         const n = apps.length;
@@ -441,13 +441,13 @@
         const rej = apps.filter((a) => a.dates.rejected).length;
         const dormant = apps.filter((a) => a.status === "Dormant").length; 
         const decl = apps.filter((a) => a.dates.declined).length;
-        const openish = apps.filter((a) => !a.dates.rejected && !a.dates.declined && !a.dates.offer).length;
+        const openish = apps.filter((a) => !a.dates.rejected && !a.dates.declined && !a.dates.offer && a.status != "Dormant").length;
         const rows = [
           ["Applications", n, "DarkMagenta"],
           ["Rejected", rej, "Red"],
           ["Declined by me", decl, "Crimson"],
           ["Dormant (+30 days)", dormant, "OrangeRed"],
-          ["Action with No offer/rej/decline", openish, "ForestGreen"],
+          ["Active (No offer/rej/decline/dormant)", openish, "ForestGreen"],
           ["Offers", offers, "RoyalBlue"],
         ];
         el.innerHTML = rows
