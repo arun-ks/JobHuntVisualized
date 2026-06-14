@@ -437,7 +437,7 @@
       function renderKpis(apps) {
         const el = document.getElementById("kpis");
         const n = apps.length;
-        const offers = apps.filter((a) => a.dates.offer).length;
+        const offers = apps.filter((a) => a.status === "Offer").length;
         const rej = apps.filter((a) => a.dates.rejected).length;
         const dormant = apps.filter((a) => a.status === "Dormant").length; 
         const decl = apps.filter((a) => a.dates.declined).length;
@@ -446,7 +446,7 @@
           ["Applications", n, "DarkMagenta"],
           ["Rejected", rej, "Red"],
           ["Declined by me", decl, "Crimson"],
-          ["Dormant (+30 days)", dormant, "OrangeRed"],
+          ["Dormant (No response for +30 days)", dormant, "OrangeRed"],
           ["Active (No offer/rej/decline/dormant)", openish, "ForestGreen"],
           ["Offers", offers, "RoyalBlue"],
         ];

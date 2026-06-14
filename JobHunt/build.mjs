@@ -25,6 +25,8 @@ const outHtml = path.join(outDir, "index.html");
 const argPath = process.argv[2];
 const workbookPath = argPath ? path.resolve(argPath) : defaultWorkbook;
 
+const DEBUG_FLAG = 0;
+
 /**
  * Normalizes a header or string cell for matching: trim and collapse internal whitespace.
  * @param {unknown} s
@@ -134,8 +136,6 @@ const STEP_DEFS = [
 ];
 
 
-
-
 /**
  * Maps one workbook row to the JSON shape consumed by report-template.html.
  * Requires at least `Date- Applied` for the row to be kept downstream.
@@ -151,7 +151,7 @@ function buildRecord(raw, idx) {
   const flag = norm(
     getCol(raw, "Flag to see if the job posting is still accepting candidates")
   );
-  const url = String(getCol(raw, "URL of Job Posting", "URL of Job Posting ") ?? "").trim();
+  const url = String(getCol(raw, "URL of Job Posting", "URL of Job Posting") ?? "").trim();
   const log = String(getCol(raw, "Log") ?? "").trim();
 
   const dates = {
@@ -173,9 +173,7 @@ function buildRecord(raw, idx) {
 
   const id = `${idx}-${company.slice(0, 24)}`.replace(/\s+/g, "-");
 
-  /** DEBUG Messsage
-   * console.log("Extracted Row#", idx + 1, ",  company=",company, " position=", position,", roleType=",roleType, ", status=",status);
-   */
+  if( DEBUG_FLAG ) console.log("Extracted Row#", idx + 1, ",  company=",company, " position=", position,", roleType=",roleType, ", status=",status, " ,url=", url);
 
   return {
     id,
@@ -255,13 +253,7 @@ function main() {
   const b64 = Buffer.from(payload, "utf8").toString("base64");
   html = html.replace("__APP_B64__", b64);
   fs.writeFileSync(outHtml, html, "utf8");
-  console.log(
-    "Wrote",
-    outHtml,
-    "—",
-    applications.length,
-    "applications (from",
-    path.basename(chosen) + ")"
+  console.log( "Wrote", outHtml, "—", applications.length, "applications (from", path.basename(chosen) + ")"
   );
 }
 
