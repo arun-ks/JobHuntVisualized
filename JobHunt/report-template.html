@@ -343,11 +343,18 @@
       /** Per-milestone colours for timeline markers (keys match build.mjs step keys). */
       const STEP_COLORS = {
         applied: "#6fa8dc",
+        "Applied": "#6fa8dc",
         shortListed: "#93c47d",
+        "Short Listed": "#93c47d",
         interview: "#ffd966",
         offer: "#8e7cc3",
         rejected: "#e06666",
+        "Rejected": "#e06666",
         declined: "#f6b26b",
+        "Declined by Me" :"#f6b26b",
+        dormant: "#f68277",
+        "Dormant": "#f68277",
+        active: "#6fdc9c",
       };
 
       /** Shared Plotly layout colours/fonts (light theme only). */
@@ -489,7 +496,7 @@
               line: { color: "#94a3b8", width: 1 },
               marker: { size: 8, color: a.steps.map((s) => STEP_COLORS[s.key] || "#888") },
               hovertemplate: "%{x|%d-%b-%y}<br>%{text}<extra></extra>",
-              text: a.steps.map((s) => `${a.company}<br>${s.label}`),
+              text: a.steps.map((s) => `${a.company}<br>${s.label}`),  
               showlegend: false,
             });
           }
@@ -534,6 +541,7 @@
           name: st,
           x: days,
           y: days.map((d) => (byDay.get(d)[st] || 0)),
+          marker : {  color: STEP_COLORS[st] ||  '#CCCCCC' },
           hovertemplate: "%{x|%d-%b-%y}<br>" + st + ": %{y}<extra></extra>",
         }));
         const layout = {
