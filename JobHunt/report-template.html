@@ -453,7 +453,7 @@
           ["Active (No offer/rej/decline/dormant)", openish, "ForestGreen"],
         ];
         el.innerHTML = rows.map(([k, v, b]) => {
-             const percent = v !== n ? `<small> (${(100 * v / n).toFixed(2)}%)</small>` : '';
+             const percent = k !== "Applications" ? `<small> (${(100 * v / n).toFixed(2)}%)</small>` : '';
              return `<div class="kpi" style="color: white; background-color: ${b}"><span>${k}</span><strong>${v}</strong>${percent}</div>`;
         }).join("");
       }
