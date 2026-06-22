@@ -342,19 +342,14 @@
 
       /** Per-milestone colours for timeline markers (keys match build.mjs step keys). */
       const STEP_COLORS = {
-        applied: "#6fa8dc",
-        "Applied": "#6fa8dc",
-        shortListed: "#93c47d",
-        "Short Listed": "#93c47d",
-        interview: "#ffd966",
-        offer: "#8e7cc3",
-        rejected: "#e06666",
-        "Rejected": "#e06666",
-        declined: "#f6b26b",
-        "Declined by Me" :"#f6b26b",
-        dormant: "#f68277",
-        "Dormant": "#f68277",
-        active: "#6fdc9c",
+        applied: "#6fa8dc",         "Applied": "#6fa8dc",
+        shortListed: "#93c47d",     "Short Listed": "#93c47d",
+        interview: "#ffd966",       "Interview/Test": "#ffd966",
+        offer: "#8e7cc3",           "Offer": "#8e7cc3",
+        rejected: "#e06666",        "Rejected": "#e06666",
+        declined: "#f6b26b",        "Declined by Me" :"#f6b26b",
+        dormant: "#f68277",         "Dormant": "#f68277",
+        active: "#6fdc9c",          "Active": "#6fdc9c",
       };
 
       /** Shared Plotly layout colours/fonts (light theme only). */
@@ -453,16 +448,14 @@
           ["Applications", n, "DarkMagenta"],
           ["Rejected", rej, "Red"],
           ["Declined by me", decl, "Crimson"],
+          ["Offers", offers, "RoyalBlue"],
           ["Dormant (No response for +30 days)", dormant, "OrangeRed"],
           ["Active (No offer/rej/decline/dormant)", openish, "ForestGreen"],
-          ["Offers", offers, "RoyalBlue"],
         ];
-        el.innerHTML = rows
-          .map(
-            ([k, v, b]) =>
-              `<div class="kpi" style="color: white; background-color: ${b}"><span>${k}</span><strong>${v}</strong></div>`
-          )
-          .join("");
+        el.innerHTML = rows.map(([k, v, b]) => {
+             const percent = v !== n ? `<small> (${(100 * v / n).toFixed(2)}%)</small>` : '';
+             return `<div class="kpi" style="color: white; background-color: ${b}"><span>${k}</span><strong>${v}</strong>${percent}</div>`;
+        }).join("");
       }
 
       /**
