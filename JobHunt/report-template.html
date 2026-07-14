@@ -217,6 +217,11 @@
         <div id="chartSankeyRoleType" class="chart"></div>
       </section>
 
+      <!--section>
+        <h2>All → status (Sankey)</h2>
+        <div id="chartSankeyAllRoleType" class="chart"></div>
+      </section--!>
+
       <section>
         <h2>Calendar heatmap (daily intensity)</h2>
         <p style="color: var(--muted); font-size: 0.85rem; margin: 0 0 0.5rem">
@@ -696,6 +701,61 @@
       }
 
     
+      /** Sankey: flow from All States to status for the filtered cohort. */
+      function renderSankeyAllRoleType(apps) {
+        const base = plotlyLayoutBase();
+        const bucket = topBucketRoleTypes(apps, 0);
+        const pairCounts = new Map();
+        const statuses = uniq(apps.map((a) => a.status));
+        for (const a of apps) {
+          const c = bucket(a.roleType);
+          const k = c + "\0" + a.status;
+          pairCounts.set(k, (pairCounts.get(k) || 0) + 1);
+        }
+        const roleTypes = uniq([...pairCounts.keys()].map((k) => k.split("\0")[0]));
+        const labels = [...roleTypes, ...statuses];
+        const idx = (s) => labels.indexOf(s);
+        const source = [];
+        const target = [];
+        const value = [];
+        const colors = [];
+        for (const [k, v] of pairCounts) {
+          const [c, s] = k.split("\0");
+          source.push(idx(c));
+          target.push(idx(s));
+          value.push(v);
+          colors.push("rgba(91,155,213,0.35)");
+        }
+        const nodeColors = labels.map((_, i) =>
+          i < roleTypes.length ? "#3d5a80" : "#6c8ebf"
+        );
+        const data = [
+          {
+            type: "sankey",
+            orientation: "h",
+            node: {
+              pad: 12,
+              thickness: 14,
+              line: { color: "#cbd5e1", width: 0.5 },
+              label: labels,
+              color: nodeColors,
+            },
+            link: {
+              source,
+              target,
+              value,
+              color: colors,
+            },
+          },
+        ];
+        const layout = {
+          ...base,
+          margin: { t: 24, r: 24, b: 24, l: 24 },
+          title: { text: "", font: { size: 14 } },
+        };
+        Plotly.react("chartSankeyAllRoleType", data, layout, { responsive: true });
+      }
+
 
 
       /** Ordered milestone path for stage-to-stage Sankey (uses date columns only). */
@@ -735,7 +795,7 @@
             linkMap.set(key, (linkMap.get(key) || 0) + 1);
           }
         }
-        const order = ["Applied", "Shortlisted", "Interview", "Offer", "Rejected", "Declined", "In progress"];
+        const order = ["Applied", "Shortlisted", "Interview", "Offer", "Dormant", "Rejected", "Declined", "In progress"];
         const labels = order.filter((n) => nodeSet.has(n));
         if (labels.length < 2 || linkMap.size === 0) {
           const el = document.getElementById("chartSankeyStages");
@@ -764,6 +824,7 @@
           Shortlisted: "#93c47d",
           Interview: "#ffd966",
           Offer: "#8e7cc3",
+          Dormant: "#f68277", 
           Rejected: "#e06666",
           Declined: "#f6b26b",
           "In progress": "#76a5af",
@@ -986,6 +1047,7 @@
         renderTimeline(apps);
         renderSankeyCompany(apps);
         renderSankeyRoleType(apps);
+        //renderSankeyAllRoleType(apps);
         renderCalendarHeatmap(apps);
         renderSankeyStages(apps);
         renderDaily(apps);
