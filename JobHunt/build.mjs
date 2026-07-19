@@ -173,7 +173,7 @@ function buildRecord(raw, idx) {
 
   const id = `${idx}-${company.slice(0, 24)}`.replace(/\s+/g, "-");
 
-  if( DEBUG_FLAG ) console.log("Extracted Row#", idx + 1, ",  company=",company, " position=", position,", roleType=",roleType, ", status=",status, " ,url=", url);
+  if( DEBUG_FLAG ) console.log("Extracted Row#", idx + 2, ",  company=",company, ", position=", position,", roleType=",roleType, ", status=",status, " ,url=", url);
 
   return {
     id,
@@ -253,8 +253,13 @@ function main() {
   const b64 = Buffer.from(payload, "utf8").toString("base64");
   html = html.replace("__APP_B64__", b64);
   fs.writeFileSync(outHtml, html, "utf8");
-  console.log( "Wrote", outHtml, "—", applications.length, "applications (from", path.basename(chosen) + ")"
-  );
+  console.log( "Wrote", outHtml, "—", applications.length, "applications (from", path.basename(chosen) + ")" );
+
+ // Add code to write excel data extracted as json in readable format. This is used for reporting & is not to be distributed.
+ // const prettyJSON = JSON.stringify(payload, null, 2); 
+ // fs.writeFileSync('output.json', prettyJSON, 'utf8');
+  fs.writeFileSync('output.json', payload, 'utf8');
+
 }
 
 main();
