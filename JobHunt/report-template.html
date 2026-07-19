@@ -862,8 +862,10 @@
         const stages = [
           ["Applied", (a) => a.dates.applied],
           ["Short listed", (a) => a.dates.shortListed],
-          ["Interview / test", (a) => a.dates.interview],
+          ["Interview/Test", (a) => a.dates.interview],
           ["Offer", (a) => a.dates.offer],
+          ["Rejected", (a) => a.dates.rejected],
+          ["Declined", (a) => a.dates.declined],
         ];
         const x = stages.map(([name]) => name);
         const y = stages.map(([, fn]) => apps.filter(fn).length);
