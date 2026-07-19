@@ -780,81 +780,100 @@
        * Second Sankey: aggregate forward links along `stagePath` for every filtered row.
        * Shows how many move Applied → … → terminal or "In progress".
        */
-      function renderSankeyStages(apps) {
-        const base = plotlyLayoutBase();
-        const linkMap = new Map();
-        const nodeSet = new Set();
-        for (const a of apps) {
-          const path = stagePath(a);
-          for (let i = 0; i < path.length - 1; i++) {
-            const from = path[i];
-            const to = path[i + 1];
-            nodeSet.add(from);
-            nodeSet.add(to);
-            const key = from + "\0" + to;
-            linkMap.set(key, (linkMap.get(key) || 0) + 1);
-          }
-        }
-        const order = ["Applied", "Shortlisted", "Interview", "Offer", "Dormant", "Rejected", "Declined", "In progress"];
-        const labels = order.filter((n) => nodeSet.has(n));
-        if (labels.length < 2 || linkMap.size === 0) {
-          const el = document.getElementById("chartSankeyStages");
-          try {
-            Plotly.purge("chartSankeyStages");
-          } catch (_) {}
-          el.innerHTML =
-            '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);padding:1rem;">Not enough linked stages in the current filter.</div>';
-          return;
-        }
-        const ix = (s) => labels.indexOf(s);
-        const source = [];
-        const target = [];
-        const value = [];
-        const linkColors = [];
-        for (const [k, v] of linkMap) {
-          const [from, to] = k.split("\0");
-          if (ix(from) < 0 || ix(to) < 0) continue;
-          source.push(ix(from));
-          target.push(ix(to));
-          value.push(v);
-          linkColors.push("rgba(147,196,125,0.4)");
-        }
-        const palette = {
-          Applied: "#6fa8dc",
-          Shortlisted: "#93c47d",
-          Interview: "#ffd966",
-          Offer: "#8e7cc3",
-          Dormant: "#f68277", 
-          Rejected: "#e06666",
-          Declined: "#f6b26b",
-          "In progress": "#76a5af",
-        };
-        const nodeColors = labels.map((l) => palette[l] || "#888");
-        const data = [
-          {
-            type: "sankey",
-            orientation: "h",
-            node: {
-              pad: 14,
-              thickness: 16,
-              line: { color: "#cbd5e1", width: 0.5 },
-              label: labels,
-              color: nodeColors,
-            },
-            link: {
-              source,
-              target,
-              value,
-              color: linkColors,
-            },
-          },
-        ];
-        const layout = {
-          ...base,
-          margin: { t: 24, r: 24, b: 24, l: 24 },
-        };
-        Plotly.react("chartSankeyStages", data, layout, { responsive: true });
-      }
+       function renderSankeyStages(apps) {
+         const base = plotlyLayoutBase();
+         const linkMap = new Map();
+         const nodeSet = new Set();
+         for (const a of apps) {
+           const path = stagePath(a);
+           for (let i = 0; i < path.length - 1; i++) {
+             const from = path[i];
+             const to = path[i + 1];
+             nodeSet.add(from);
+             nodeSet.add(to);
+             const key = from + "\0" + to;
+             linkMap.set(key, (linkMap.get(key) || 0) + 1);
+           }
+         }
+         const order = [ "Applied", "Shortlisted", "Interview", "Offer", "Dormant", "Rejected", "Declined", "In progress", ];
+         const labels = order.filter((name) => nodeSet.has(name));
+         if (labels.length < 2 || linkMap.size === 0) {
+           const el = document.getElementById("chartSankeyStages");
+           try {
+             Plotly.purge("chartSankeyStages");
+           } catch (_) {}
+           el.innerHTML =
+             '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);padding:1rem;">Not enough linked stages in the current filter.</div>';
+           return;
+         }
+         const ix = (stageName) => labels.indexOf(stageName);
+         const source = [];
+         const target = [];
+         const value = [];
+         const linkColors = [];
+         const incomingTotals = new Array(labels.length).fill(0);
+         const outgoingTotals = new Array(labels.length).fill(0);
+         for (const [key, count] of linkMap) {
+           const [from, to] = key.split("\0");
+           const sourceIndex = ix(from);
+           const targetIndex = ix(to);
+           if (sourceIndex < 0 || targetIndex < 0) continue;
+           source.push(sourceIndex);
+           target.push(targetIndex);
+           value.push(count);
+           linkColors.push("rgba(147,196,125,0.4)");
+           outgoingTotals[sourceIndex] += count;
+           incomingTotals[targetIndex] += count;
+         }
+         const displayLabels = labels.map((label, index) => {
+           const total = incomingTotals[index] > 0 ? incomingTotals[index] : outgoingTotals[index];
+           return `${label} (${total})`;
+         });
+         const palette = {
+           Applied: "#6fa8dc",
+           Shortlisted: "#93c47d",
+           Interview: "#ffd966",
+           Offer: "#8e7cc3",
+           Dormant: "#f68277",
+           Rejected: "#e06666",
+           Declined: "#f6b26b",
+           "In progress": "#76a5af",
+         };
+         const nodeColors = labels.map((label) => palette[label] || "#888");
+         const data = [
+           {
+             type: "sankey",
+             orientation: "h",
+             node: {
+               pad: 14,
+               thickness: 16,
+               line: { color: "#cbd5e1", width: 0.5 },
+               label: displayLabels,
+               color: nodeColors,
+               // Keep hover text readable without duplicating the count.
+               customdata: labels,
+               hovertemplate: "%{customdata}<br>Total input: %{value}<extra></extra>",
+             },
+             link: {
+               source,
+               target,
+               value,
+               color: linkColors,
+               customdata: source.map((sourceIndex, index) => {
+                 return `${labels[sourceIndex]} → ${labels[target[index]]}`;
+               }),
+               hovertemplate:
+                 "%{customdata}<br>Count: %{value}<extra></extra>",
+             },
+           },
+         ];
+         const layout = {
+           ...base,
+           margin: { t: 24, r: 24, b: 24, l: 24 },
+         };
+         Plotly.react("chartSankeyStages", data,layout,{ responsive: true } );
+       }
+       
 
       /** Simple bar counts: how many rows have each milestone date column set. */
       function renderFunnel(apps) {
