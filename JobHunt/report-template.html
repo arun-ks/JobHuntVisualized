@@ -347,15 +347,16 @@
 
       /** Per-milestone colours for timeline markers (keys match build.mjs step keys). */
       const STEP_COLORS = {
-        applied: "#6fa8dc",         "Applied": "#6fa8dc",
-        shortListed: "#93c47d",     "Short Listed": "#93c47d",
-        interview: "#ffd966",       "Interview/Test": "#ffd966",
-        offer: "#8e7cc3",           "Offer": "#8e7cc3",
-        rejected: "#e06666",        "Rejected": "#e06666",
-        declined: "#f6b26b",        "Declined by Me" :"#f6b26b",
-        dormant: "#f68277",         "Dormant": "#f68277",
-        active: "#6fdc9c",          "Active": "#6fdc9c",
+        applied: "#6fa8dc",         "Applied": "#6fa8dc",               Applied: "#6fa8dc",
+        shortListed: "#93c47d",     "Short Listed": "#93c47d",          Shortlisted: "#93c47d",
+        interview: "#ffd966",       "Interview/Test": "#ffd966",        Interview: "#ffd966",
+        offer: "#8e7cc3",           "Offer": "#8e7cc3",                 Offer: "#8e7cc3",        
+        rejected: "#e06666",        "Rejected": "#e06666",              Rejected: "#e06666",
+        declined: "#f6b26b",        "Declined by Me" :"#f6b26b",        Declined: "#f6b26b",
+        dormant: "#f68277",         "Dormant": "#f68277",               Dormant: "#f68277",
+        active: "#6fdc9c",          "Active": "#6fdc9c",                "In progress": "#76a5af",
       };
+
 
       /** Shared Plotly layout colours/fonts (light theme only). */
       function plotlyLayoutBase() {
@@ -649,111 +650,76 @@
       function renderSankeyRoleType(apps) {
         const base = plotlyLayoutBase();
         const bucket = topBucketRoleTypes(apps, 14);
-        const pairCounts = new Map();
-        const statuses = uniq(apps.map((a) => a.status));
+        const pairCounts = new Map();      
+        const statuses = uniq(apps.map((a) => a.status));      
         for (const a of apps) {
-          const c = bucket(a.roleType);
-          const k = c + "\0" + a.status;
-          pairCounts.set(k, (pairCounts.get(k) || 0) + 1);
-        }
-        const roleTypes = uniq([...pairCounts.keys()].map((k) => k.split("\0")[0]));
+          const roleType = bucket(a.roleType);
+          const key = roleType + "\0" + a.status;      
+          pairCounts.set(key, (pairCounts.get(key) || 0) + 1);
+        }      
+        const roleTypes = uniq([...pairCounts.keys()].map((k) => k.split("\0")[0]));      
         const labels = [...roleTypes, ...statuses];
-        const idx = (s) => labels.indexOf(s);
+        const idx = (name) => labels.indexOf(name);      
         const source = [];
         const target = [];
         const value = [];
-        const colors = [];
-        for (const [k, v] of pairCounts) {
-          const [c, s] = k.split("\0");
-          source.push(idx(c));
-          target.push(idx(s));
-          value.push(v);
-          colors.push("rgba(91,155,213,0.35)");
-        }
-        const nodeColors = labels.map((_, i) =>
-          i < roleTypes.length ? "#3d5a80" : "#6c8ebf"
-        );
-        const data = [
-          {
-            type: "sankey",
-            orientation: "h",
-            node: {
-              pad: 12,
-              thickness: 14,
-              line: { color: "#cbd5e1", width: 0.5 },
-              label: labels,
-              color: nodeColors,
-            },
-            link: {
-              source,
-              target,
-              value,
-              color: colors,
-            },
-          },
-        ];
-        const layout = {
-          ...base,
-          margin: { t: 24, r: 24, b: 24, l: 24 },
-          title: { text: "", font: { size: 14 } },
-        };
-        Plotly.react("chartSankeyRoleType", data, layout, { responsive: true });
-      }
+        const colors = [];      
+        const incomingTotals = new Array(labels.length).fill(0);
+        const outgoingTotals = new Array(labels.length).fill(0);      
+        for (const [key, count] of pairCounts) {
+          const [roleType, status] = key.split("\0");      
+          const sourceIndex = idx(roleType);
+          const targetIndex = idx(status);      
+          if (sourceIndex < 0 || targetIndex < 0) continue;      
+          source.push(sourceIndex);
+          target.push(targetIndex);
+          value.push(count);
+          colors.push("rgba(91,155,213,0.35)");      
+          outgoingTotals[sourceIndex] += count;
+          incomingTotals[targetIndex] += count;
+        }      
+        const displayLabels = labels.map((label, index) => {
+          const total = index < roleTypes.length ? outgoingTotals[index] :incomingTotals[index];      
+          return `${label} (${total})`;
+        });      
+        const nodeColorsOLD = labels.map((_, index) =>
+          index < roleTypes.length ? "#3d5a80" : "#6c8ebf"
+        );      
+        const nodeColors = labels.map((label) => STEP_COLORS[label] || "#888");
 
-    
-      /** Sankey: flow from All States to status for the filtered cohort. */
-      function renderSankeyAllRoleType(apps) {
-        const base = plotlyLayoutBase();
-        const bucket = topBucketRoleTypes(apps, 0);
-        const pairCounts = new Map();
-        const statuses = uniq(apps.map((a) => a.status));
-        for (const a of apps) {
-          const c = bucket(a.roleType);
-          const k = c + "\0" + a.status;
-          pairCounts.set(k, (pairCounts.get(k) || 0) + 1);
-        }
-        const roleTypes = uniq([...pairCounts.keys()].map((k) => k.split("\0")[0]));
-        const labels = [...roleTypes, ...statuses];
-        const idx = (s) => labels.indexOf(s);
-        const source = [];
-        const target = [];
-        const value = [];
-        const colors = [];
-        for (const [k, v] of pairCounts) {
-          const [c, s] = k.split("\0");
-          source.push(idx(c));
-          target.push(idx(s));
-          value.push(v);
-          colors.push("rgba(91,155,213,0.35)");
-        }
-        const nodeColors = labels.map((_, i) =>
-          i < roleTypes.length ? "#3d5a80" : "#6c8ebf"
-        );
+        const linkDescriptions = source.map((sourceIndex, index) => {
+          return `${labels[sourceIndex]} → ${labels[target[index]]}`;
+        });
+      
         const data = [
           {
             type: "sankey",
-            orientation: "h",
+            orientation: "h",      
             node: {
               pad: 12,
               thickness: 14,
               line: { color: "#cbd5e1", width: 0.5 },
-              label: labels,
-              color: nodeColors,
-            },
+              label: displayLabels,
+              color: nodeColors,      
+              customdata: labels,
+              hovertemplate: "%{customdata}<br>Total: %{value}<extra></extra>",
+            },      
             link: {
               source,
               target,
               value,
-              color: colors,
+              color: colors,      
+              customdata: linkDescriptions,
+              hovertemplate: "%{customdata}<br>Applications: %{value}<extra></extra>",
             },
           },
-        ];
+        ];      
         const layout = {
           ...base,
           margin: { t: 24, r: 24, b: 24, l: 24 },
           title: { text: "", font: { size: 14 } },
-        };
-        Plotly.react("chartSankeyAllRoleType", data, layout, { responsive: true });
+        };     
+        Plotly.react("chartSankeyRoleType", data, layout, { responsive: true });
       }
 
 
@@ -831,17 +797,7 @@
            const total = incomingTotals[index] > 0 ? incomingTotals[index] : outgoingTotals[index];
            return `${label} (${total})`;
          });
-         const palette = {
-           Applied: "#6fa8dc",
-           Shortlisted: "#93c47d",
-           Interview: "#ffd966",
-           Offer: "#8e7cc3",
-           Dormant: "#f68277",
-           Rejected: "#e06666",
-           Declined: "#f6b26b",
-           "In progress": "#76a5af",
-         };
-         const nodeColors = labels.map((label) => palette[label] || "#888");
+         const nodeColors = labels.map((label) => STEP_COLORS[label] || "#888");
          const data = [
            {
              type: "sankey",
@@ -887,6 +843,7 @@
           ["Offer", (a) => a.dates.offer],
           ["Rejected", (a) => a.dates.rejected],
           ["Declined", (a) => a.dates.declined],
+          ["Dormant", (a) => a.dates.dormant],
         ];
         const x = stages.map(([name]) => name);
         const y = stages.map(([, fn]) => apps.filter(fn).length);
