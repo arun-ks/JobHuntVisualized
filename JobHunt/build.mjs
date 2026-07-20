@@ -13,6 +13,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeFile } from 'fs/promises';
 import XLSX from "xlsx";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -256,10 +257,14 @@ function main() {
   console.log( "Wrote", outHtml, "—", applications.length, "applications (from", path.basename(chosen) + ")" );
 
  // Add code to write excel data extracted as json in readable format. This is used for reporting & is not to be distributed.
- // const prettyJSON = JSON.stringify(payload, null, 2); 
- // fs.writeFileSync('output.json', prettyJSON, 'utf8');
-  fs.writeFileSync('output.json', payload, 'utf8');
-
+ const jsonObject = typeof payload === 'string' ? JSON.parse(payload) : payload;
+ const prettyPayload = JSON.stringify(jsonObject, null, 2);
+ try {
+    fs.writeFileSync('output.json', prettyPayload, 'utf8');
+ } 
+ catch (error) {
+   console.error('Error writing output.json :', error);
+ }
 }
 
 main();
