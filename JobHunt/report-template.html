@@ -771,8 +771,10 @@
         if (a.dates.interview) nodes.push("Interview");
         if (a.dates.offer) nodes.push("Offer");
         if (a.dates.rejected) nodes.push("Rejected");
-        else if (a.dates.declined) nodes.push("Declined");
-        else nodes.push("In progress");
+        if (a.dates.declined) nodes.push("Declined");
+        if (a.dates.dormant) nodes.push("Dormant");
+
+        if (! a.dates.offer && !a.dates.rejected && !a.dates.declined && !a.dates.dormant) nodes.push("In progress");
         return nodes;
       }
 

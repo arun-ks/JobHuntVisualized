@@ -160,6 +160,7 @@ function buildRecord(raw, idx) {
     applied: toISODate(getCol(raw, "Date- Applied")),
     shortListed: toISODate(getCol(raw, "Date- Short Listed")),
     interview: toISODate(getCol(raw, "Date- Interview/Test")),
+    dormant: toISODate(getCol(raw, "Date- Dormant")),
     offer: toISODate(getCol(raw, "Date- Offer")),
     rejected: toISODate(getCol(raw, "Date- Rejected")),
     declined: toISODate(getCol(raw, "Date- Declined by Me")),
