@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Hunt applications</title>
+  <style>
+    :root { --bg:#f4f6fa; --panel:#fff; --text:#1a2332; --muted:#5c6b7e; --accent:#2a6ebb; --border:#d8e0ea; --btn-bg:#e8eef6; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; color:var(--text); background:var(--bg); line-height:1.45; }
+    header { padding:1.25rem 1.5rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    .header-row { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
+    h1 { margin:0; font-size:1.35rem; font-weight:600; }
+    .extract-date { color:var(--muted); font-size:.85rem; margin-top:.15rem; }
+    .page-nav { display:flex; gap:.5rem; }
+    .page-nav a { color:var(--text); text-decoration:none; padding:.45rem .75rem; border:1px solid var(--border); border-radius:6px; background:var(--btn-bg); }
+    .page-nav a[aria-current="page"] { color:#fff; background:var(--accent); border-color:var(--accent); }
+    main { width:100%; max-width:min(1920px,calc(100vw - 24px)); margin:0 auto; padding:1rem clamp(.75rem,2.5vw,2rem) 2rem; }
+    .filters { display:grid; grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) minmax(260px,1.5fr); gap:.75rem 1rem; align-items:start; padding:.75rem 1rem; margin-bottom:.75rem; background:var(--panel); border:1px solid var(--border); border-radius:8px; }
+    label,.field-label { display:block; color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem; }
+    select,input[type="search"] { width:100%; color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:6px; }
+    select { min-height:96px; padding:.35rem; }
+    input[type="search"] { padding:.65rem .75rem; }
+    .date-filter { grid-column:1/3; }
+    .date-heading { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+    .date-values { color:var(--text); text-transform:none; letter-spacing:0; }
+    .range-grid { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+    input[type="range"] { width:100%; accent-color:var(--accent); }
+    .search-column { display:flex; flex-direction:column; gap:.65rem; }
+    .actions { display:flex; justify-content:flex-end; }
+    button { padding:.55rem .85rem; border:1px solid var(--border); border-radius:6px; color:var(--text); background:var(--btn-bg); cursor:pointer; }
+    button:hover { border-color:var(--accent); }
+    .table-wrap { width:100%; overflow-x:auto; background:var(--panel); border:1px solid var(--border); border-radius:8px; }
+    table { width:100%; border-collapse:collapse; min-width:1060px; }
+    th,td { padding:.65rem .7rem; text-align:left; vertical-align:top; border-bottom:1px solid var(--border); }
+    th { position:sticky; top:0; z-index:1; background:var(--btn-bg); color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
+    tbody tr:hover { background:var(--bg); }
+    td.company { font-weight:600; }
+    td.position { min-width:220px; }
+    td.nowrap { white-space:nowrap; }
+    a { color:var(--accent); }
+    .empty { padding:2rem; text-align:center; color:var(--muted); }
+    .row-count { margin:0 0 .4rem; text-align:right; color:var(--muted); font-size:.9rem; }
+    .row-count strong { color:var(--text); }
+    .error { padding:1rem; color:#9b1c1c; background:var(--panel); border:1px solid var(--border); border-radius:8px; }
+    @media (max-width:760px) {
+      header { padding:1rem; }
+      .header-row { align-items:flex-start; }
+      .page-nav { width:100%; }
+      .page-nav a { flex:1; text-align:center; }
+      main { max-width:100%; padding:.75rem; }
+      .filters { grid-template-columns:1fr; padding:.75rem; }
+      .date-filter { grid-column:auto; }
+      .range-grid { grid-template-columns:1fr; gap:.5rem; }
+      .actions button { width:100%; }
+      select { min-height:96px; }
+      .row-count { text-align:center; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-row">
+      <div><h1>Job Hunt Applications</h1><div class="extract-date" id="extractDate">Date of extract: loading…</div></div>
+      <nav class="page-nav" aria-label="Report pages"><a href="index.html">Dashboard</a><a href="applications.html" aria-current="page">Applications</a></nav>
+    </div>
+  </header>
+  <main>
+    <section class="filters" aria-label="Application filters">
+      <div><label for="roleFilter">Role type</label><select id="roleFilter" multiple aria-describedby="multiHint"></select></div>
+      <div><label for="statusFilter">Status</label><select id="statusFilter" multiple aria-describedby="multiHint"></select></div>
+      <div class="search-column">
+        <div class="actions"><button id="resetFilters" type="button">Reset filters</button></div>
+        <div><label for="searchFilter">Search company or position</label><input id="searchFilter" type="search" placeholder="Type a company or position"></div>
+      </div>
+      <div class="date-filter">
+        <div class="date-heading"><span class="field-label">Applied date range</span><span class="field-label date-values" id="dateValues"></span></div>
+        <div class="range-grid">
+          <div><label for="dateFrom">From</label><input id="dateFrom" type="range" min="0" value="0"></div>
+          <div><label for="dateTo">To</label><input id="dateTo" type="range" min="0" value="0"></div>
+        </div>
+      </div>
+      <span id="multiHint" hidden>Use Control or Command to select more than one value. No selection shows all values.</span>
+    </section>
+    <div id="error" class="error" role="alert" hidden></div>
+    <div class="row-count" aria-live="polite"><strong id="visibleCount">0</strong>/<span id="totalCount">0</span> applications</div>
+    <div class="table-wrap" id="tableWrap">
+      <table>
+        <thead><tr><th>Company</th><th>Position</th><th>Role type</th><th>Status</th><th>Applied</th><th>Job posted</th><th>Portal</th><th>Latest milestone</th><th>Posting</th></tr></thead>
+        <tbody id="applicationRows"></tbody>
+      </table>
+      <div class="empty" id="emptyState" hidden>No applications match the selected filters.</div>
+    </div>
+  </main>
+  <script src="applications.js"></script>
+  <script>
+    const DATA = window.JOBHUNT_DATA;
+    const DAY_MS = 86400000;
+    const $ = id => document.getElementById(id);
+    const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const parseIsoDay = iso => Date.parse(`${String(iso).slice(0,10)}T00:00:00`);
+    const formatDate = iso => {
+      if (!iso) return "—";
+      const time = parseIsoDay(iso);
+      return Number.isNaN(time) ? String(iso) : new Date(time).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" });
+    };
+    const selectedValues = select => new Set([...select.selectedOptions].map(option => option.value));
+    const latestMilestone = app => {
+      const labels = { applied:"Applied", shortListed:"Short listed", interview:"Interview / test", dormant:"Dormant", offer:"Offer", rejected:"Rejected", declined:"Declined" };
+      return Object.entries(app.dates || {}).filter(([key,value]) => key !== "jobPosted" && value).sort((a,b) => String(b[1]).localeCompare(String(a[1]))).map(([key,value]) => `${labels[key] || key} · ${formatDate(value)}`)[0] || "—";
+    };
+    function fillSelect(select, values) {
+      select.innerHTML = values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+    }
+    function offsetToDate(offset) { return new Date(DATA.dateBounds.earliestTime + Number(offset) * DAY_MS); }
+    function refresh() {
+      let fromOffset = Number($("dateFrom").value), toOffset = Number($("dateTo").value);
+      if (fromOffset > toOffset) [fromOffset,toOffset] = [toOffset,fromOffset];
+      const fromTime = offsetToDate(fromOffset).getTime(), toTime = offsetToDate(toOffset).getTime();
+      $("dateValues").textContent = `${formatDate(new Date(fromTime).toISOString())} — ${formatDate(new Date(toTime).toISOString())}`;
+      const roles = selectedValues($("roleFilter")), statuses = selectedValues($("statusFilter"));
+      const query = $("searchFilter").value.trim().toLocaleLowerCase();
+      const visible = DATA.applications.filter(app => {
+        const appliedTime = parseIsoDay(app.dates?.applied);
+        return (!roles.size || roles.has(app.roleType)) && (!statuses.size || statuses.has(app.status)) && appliedTime >= fromTime && appliedTime <= toTime && (!query || String(app.company).toLocaleLowerCase().includes(query) || String(app.position).toLocaleLowerCase().includes(query));
+      });
+      $("applicationRows").innerHTML = visible.map(app => {
+        const safeUrl = /^https?:\/\//i.test(app.url || "") ? app.url : "";
+        return `<tr><td class="company">${escapeHtml(app.company)}</td><td class="position">${escapeHtml(app.position)}</td><td>${escapeHtml(app.roleType)}</td><td>${escapeHtml(app.status)}</td><td class="nowrap">${formatDate(app.dates?.applied)}</td><td class="nowrap">${formatDate(app.dates?.jobPosted)}</td><td>${escapeHtml(app.portal || "—")}</td><td class="nowrap">${escapeHtml(latestMilestone(app))}</td><td>${safeUrl ? `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">Open</a>` : "—"}</td></tr>`;
+      }).join("");
+      $("visibleCount").textContent = visible.length.toLocaleString();
+      $("emptyState").hidden = visible.length !== 0;
+      $("applicationRows").hidden = visible.length === 0;
+    }
+    function resetFilters() {
+      [$("roleFilter"),$("statusFilter")].forEach(select => [...select.options].forEach(option => option.selected = false));
+      $("searchFilter").value = "";
+      $("dateFrom").value = 0;
+      $("dateTo").value = DATA.dateBounds.spanDays;
+      refresh();
+    }
+    function init() {
+      if (DATA && Array.isArray(DATA.applications)) {
+        const appliedDates = DATA.applications.map(app => app.dates?.applied).filter(Boolean).sort();
+        const earliestTime = parseIsoDay(appliedDates[0]), latestTime = parseIsoDay(appliedDates.at(-1));
+        DATA.dateBounds = { earliestTime, latestTime, spanDays:Math.round((latestTime-earliestTime)/DAY_MS) };
+        fillSelect($("roleFilter"), [...new Set(DATA.applications.map(app => app.roleType))].sort());
+        fillSelect($("statusFilter"), [...new Set(DATA.applications.map(app => app.status))].sort());
+        $("dateFrom").max = DATA.dateBounds.spanDays;
+        $("dateTo").max = DATA.dateBounds.spanDays;
+        $("dateTo").value = DATA.dateBounds.spanDays;
+        $("extractDate").textContent = `Date of extract: ${new Date(DATA.generatedAt).toLocaleString("en-GB", { dateStyle:"medium", timeStyle:"short" })}`;
+        $("totalCount").textContent = DATA.applications.length.toLocaleString();
+        [$("roleFilter"),$("statusFilter"),$("searchFilter"),$("dateFrom"),$("dateTo")].forEach(control => control.addEventListener("input", refresh));
+        $("resetFilters").addEventListener("click", resetFilters);
+        refresh();
+      } else {
+        $("tableWrap").hidden = true;
+        $("error").hidden = false;
+        $("error").textContent = "Unable to load applications.js. Keep it in the same folder as applications.html.";
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

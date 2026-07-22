@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "build:open": "node build.mjs; start ..\\dist\\jobhunt-progress.html"
+    "debug": "node --inspect build.mjs",
+    "build:open": "node build.mjs; start ..\\dist\\index.html"
   },
   "dependencies": {
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"

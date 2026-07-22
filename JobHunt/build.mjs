@@ -13,7 +13,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { writeFile } from 'fs/promises';
 import XLSX from "xlsx";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,6 +21,8 @@ const SHEET_NAME = "JobHunt";
 const defaultWorkbook = path.join(repoRoot, "JobHunt.xlsm");
 const outDir = path.join(repoRoot, "dist");
 const outHtml = path.join(outDir, "index.html");
+const outTableHtml = path.join(outDir, "applications.html");
+const outJavaScript = path.join(outDir, "applications.js");
 
 const argPath = process.argv[2];
 const workbookPath = argPath ? path.resolve(argPath) : defaultWorkbook;
@@ -245,27 +246,21 @@ function main() {
 
   fs.mkdirSync(outDir, { recursive: true });
   const templatePath = path.join(__dirname, "report-template.html");
-  let html = fs.readFileSync(templatePath, "utf8");
-  const payload = JSON.stringify({
+  const html = fs.readFileSync(templatePath, "utf8");
+  const tableHtml = fs.readFileSync(path.join(__dirname, "applications-template.html"), "utf8");
+  const payload = {
     generatedAt: new Date().toISOString(),
     source: path.basename(chosen),
     sheet: sheetName,
     applications,
-  });
-  const b64 = Buffer.from(payload, "utf8").toString("base64");
-  html = html.replace("__APP_B64__", b64);
+  };
+  const prettyPayload = JSON.stringify(payload, null, 2);
+  const javascriptPayload = `window.JOBHUNT_DATA = ${prettyPayload};\n`;
   fs.writeFileSync(outHtml, html, "utf8");
+  fs.writeFileSync(outTableHtml, tableHtml, "utf8");
+  fs.writeFileSync(outJavaScript, javascriptPayload, "utf8");
   console.log( "Wrote", outHtml, "—", applications.length, "applications (from", path.basename(chosen) + ")" );
 
- // Add code to write excel data extracted as json in readable format. This is used for reporting & is not to be distributed.
- const jsonObject = typeof payload === 'string' ? JSON.parse(payload) : payload;
- const prettyPayload = JSON.stringify(jsonObject, null, 2);
- try {
-    fs.writeFileSync('output.json', prettyPayload, 'utf8');
- } 
- catch (error) {
-   console.error('Error writing output.json :', error);
- }
 }
 
 main();

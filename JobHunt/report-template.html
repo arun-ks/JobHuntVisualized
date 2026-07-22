@@ -253,8 +253,7 @@
 
     <button type="button" id="scrollTopBtn" aria-label="Back to top" title="Back to top">↑</button>
 
-    <meta id="app-meta" data-b64="__APP_B64__" />
-
+    <script src="applications.js"></script>
     <script>
       /**
        * In-browser report for Job Hunt data embedded at build time (see build.mjs).
@@ -262,14 +261,7 @@
        */
 
       /** Decodes UTF-8 JSON payload from Base64 (build step stores DATA this way). */
-      function b64ToUtf8(b64) {
-        const bin = atob(b64);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        return new TextDecoder("utf-8").decode(bytes);
-      }
-
-      const DATA = JSON.parse(b64ToUtf8(document.getElementById("app-meta").dataset.b64));
+      const DATA = window.JOBHUNT_DATA;
 
       /** Three-letter English month abbreviations for manual date formatting. */
       const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -1069,9 +1061,16 @@
       });
       updateScrollTopBtn();
 
-      setReportTitle();
-      fillFilters();
-      refresh();
+      function initReport() {
+        if (DATA && Array.isArray(DATA.applications)) {
+          setReportTitle();
+          fillFilters();
+          refresh();
+        } else {
+          document.querySelector(".wrap").innerHTML = '<p role="alert">Unable to load applications.js. Keep it in the same folder as index.html.</p>';
+        }
+      }
+      initReport();
     </script>
   </body>
 </html>
